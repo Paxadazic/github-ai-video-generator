@@ -1,0 +1,1628 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GitHub Trending 视频流水线</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f7f5f0;
+      --fg: #1a1917;
+      --card: #fff;
+      --muted: #78726c;
+      --soft: #ede9e3;
+      --soft-2: #f3f0ea;
+      --line: #ddd8d0;
+      --line-2: #ebe6dd;
+      --accent: #1a1917;
+      --accent-fg: #f7f5f0;
+      --danger: #b42318;
+      --danger-bg: #fff2f0;
+      --ok: #15803d;
+      --ok-bg: #ecfdf3;
+      --warn: #a15c07;
+      --warn-bg: #fffaeb;
+      --blue: #2563eb;
+      --blue-bg: #eff6ff;
+      --phone: #0b0b0c;
+      --radius: 6px;
+    }
+
+    * { box-sizing: border-box; }
+    html { font-size: 16px; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
+      letter-spacing: 0;
+    }
+    button, input, select, textarea { font: inherit; }
+    button {
+      min-height: 36px;
+      border: 1px solid var(--accent);
+      border-radius: var(--radius);
+      padding: 7px 13px;
+      background: var(--accent);
+      color: var(--accent-fg);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .16s ease, border-color .16s ease, color .16s ease, opacity .16s ease;
+    }
+    button:hover:not(:disabled) { opacity: .88; }
+    button:disabled { cursor: not-allowed; opacity: .48; }
+    button.secondary {
+      background: var(--card);
+      color: var(--fg);
+      border-color: var(--line);
+    }
+    button.ghost {
+      background: transparent;
+      color: var(--muted);
+      border-color: transparent;
+    }
+    button.danger {
+      background: var(--card);
+      color: var(--danger);
+      border-color: #f1b8b4;
+    }
+    a { color: var(--fg); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code {
+      font-family: Consolas, "SFMono-Regular", monospace;
+      font-size: 12px;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .topbar {
+      flex-shrink: 0;
+      background: var(--card);
+      border-bottom: 1px solid var(--line);
+      padding: 14px 24px;
+    }
+    .topbar-inner,
+    .tabs-inner,
+    .content {
+      width: min(100%, 920px);
+      margin: 0 auto;
+    }
+    .topbar-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+    .brand-mark {
+      width: 32px;
+      height: 32px;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: var(--fg);
+      background: var(--card);
+      font-weight: 700;
+    }
+    h1, h2, h3, p { margin: 0; }
+    .brand h1 {
+      font-size: 15px;
+      line-height: 1.35;
+      font-weight: 600;
+    }
+    .brand p {
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 12px;
+      overflow-wrap: anywhere;
+    }
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .health {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 30px;
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--warn);
+    }
+    .dot.ok { background: var(--ok); }
+
+    .view-nav {
+      flex-shrink: 0;
+      background: var(--card);
+      border-bottom: 1px solid var(--line);
+      padding: 0 24px;
+    }
+    .tabs-inner {
+      display: flex;
+      gap: 0;
+      overflow-x: auto;
+    }
+    .nav-button {
+      min-height: 44px;
+      border: 0;
+      border-bottom: 2px solid transparent;
+      border-radius: 0;
+      padding: 11px 15px 10px;
+      background: transparent;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .nav-button.active {
+      color: var(--fg);
+      border-bottom-color: var(--fg);
+    }
+
+    .content {
+      flex: 1;
+      padding: 24px 24px 32px;
+    }
+    .view { display: none; }
+    .view.active { display: block; }
+    .stack { display: grid; gap: 28px; }
+    .split {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+      gap: 18px;
+      align-items: start;
+    }
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .panel-header {
+      min-height: 54px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+    }
+    .panel-kicker,
+    .section-title {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .panel-header h2 {
+      margin-top: 2px;
+      font-size: 16px;
+      font-weight: 600;
+      line-height: 1.35;
+    }
+    .panel-body { padding: 16px; }
+
+    .hero-card {
+      display: grid;
+      gap: 12px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--card);
+    }
+    .meta-row,
+    .button-row,
+    .filters {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .meta-chip,
+    .filter,
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 24px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .meta-chip,
+    .filter {
+      background: var(--soft-2);
+      border: 1px solid var(--line);
+      color: var(--muted);
+    }
+    .filter {
+      background: var(--card);
+      cursor: pointer;
+    }
+    .filter.active {
+      background: var(--fg);
+      color: var(--bg);
+      border-color: var(--fg);
+    }
+    .status { background: var(--soft); color: var(--muted); }
+    .status.failed { background: var(--danger-bg); color: var(--danger); }
+    .status.review_pending { background: var(--blue-bg); color: var(--blue); }
+    .status.approved, .status.published_manual { background: var(--ok-bg); color: var(--ok); }
+    .status.created, .status.collected, .status.scored, .status.script_generated,
+    .status.tts_generated, .status.rendering, .status.rendered, .status.rejected {
+      background: var(--warn-bg);
+      color: var(--warn);
+    }
+    .task-title {
+      font-size: 23px;
+      line-height: 1.25;
+      font-weight: 600;
+      overflow-wrap: anywhere;
+    }
+    .task-copy {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+      overflow-wrap: anywhere;
+    }
+    .action-panel {
+      display: grid;
+      gap: 10px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--soft-2);
+    }
+    .action-panel h3 {
+      font-size: 16px;
+      font-weight: 600;
+    }
+    .action-panel p {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    .action-panel.failed { background: var(--danger-bg); border-color: #f1b8b4; }
+    .action-panel.done { background: var(--ok-bg); border-color: #b7e2c4; }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .field {
+      display: grid;
+      gap: 7px;
+      min-width: 0;
+    }
+    .field.full { grid-column: 1 / -1; }
+    .field span,
+    .check span {
+      color: var(--fg);
+      font-size: 13px;
+      font-weight: 600;
+    }
+    select,
+    input[type="number"],
+    input[type="text"],
+    textarea {
+      width: 100%;
+      min-height: 38px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--card);
+      color: var(--fg);
+      padding: 8px 10px;
+      font-size: 14px;
+    }
+    textarea {
+      min-height: 88px;
+      resize: vertical;
+    }
+    .check {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      margin-top: 14px;
+    }
+    .settings-stack {
+      display: grid;
+      gap: 18px;
+    }
+    .settings-section {
+      display: grid;
+      gap: 12px;
+      padding-top: 2px;
+    }
+    .settings-section + .settings-section {
+      border-top: 1px solid var(--line-2);
+      padding-top: 16px;
+    }
+    .settings-section h3 {
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .settings-help,
+    .rule-list {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    .rule-list {
+      margin: 0;
+      padding-left: 18px;
+    }
+    .preset-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto auto;
+      gap: 8px;
+      align-items: end;
+    }
+    .repo-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+    }
+    .stage {
+      margin-top: 14px;
+      padding: 11px 12px;
+      border: 1px solid #f0d09a;
+      border-radius: var(--radius);
+      background: var(--warn-bg);
+      color: var(--warn);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .pipeline {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: var(--card);
+    }
+    .progress-track {
+      height: 3px;
+      background: var(--line-2);
+    }
+    .progress-fill {
+      width: 0%;
+      height: 100%;
+      background: var(--fg);
+      transition: width .25s ease;
+    }
+    .pipeline-step {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 14px;
+      border-top: 1px solid var(--line-2);
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .step-dot {
+      width: 16px;
+      height: 16px;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 10px;
+      flex: 0 0 auto;
+    }
+    .pipeline-step.done .step-dot {
+      background: var(--fg);
+      border-color: var(--fg);
+      color: var(--bg);
+    }
+    .pipeline-step.active {
+      color: var(--fg);
+      font-weight: 600;
+    }
+
+    .candidate-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 10px;
+    }
+    .candidate-card {
+      display: grid;
+      gap: 8px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 13px;
+      background: var(--card);
+    }
+    .candidate-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: start;
+    }
+    .candidate-title b {
+      font-size: 14px;
+      overflow-wrap: anywhere;
+    }
+    .candidate-card p {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .preview-shell {
+      display: grid;
+      justify-items: center;
+      gap: 12px;
+    }
+    .phone {
+      width: min(100%, 340px);
+      aspect-ratio: 9 / 16;
+      border: 1px solid #18181b;
+      border-radius: var(--radius);
+      background: var(--phone);
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+    }
+    .phone video,
+    .phone img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+      background: var(--phone);
+    }
+    .empty-preview {
+      display: grid;
+      gap: 10px;
+      place-items: center;
+      padding: 24px;
+      text-align: center;
+      color: #a1a1aa;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    .empty-preview b {
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+    }
+    audio { width: min(100%, 340px); }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .summary-list {
+      display: grid;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .summary-row {
+      display: grid;
+      gap: 5px;
+      padding: 11px 12px;
+      border-bottom: 1px solid var(--line-2);
+      background: var(--card);
+      font-size: 13px;
+      min-width: 0;
+    }
+    .summary-row:last-child { border-bottom: 0; }
+    .summary-row b {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .summary-row span { overflow-wrap: anywhere; }
+
+    .evidence-grid {
+      display: grid;
+      grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+    }
+    .evidence-stack { display: grid; gap: 18px; min-width: 0; }
+    .evidence-section { display: grid; gap: 9px; min-width: 0; }
+    .asset-list { display: grid; gap: 0; }
+    .asset {
+      display: grid;
+      grid-template-columns: 72px minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      padding: 9px 0;
+      border-bottom: 1px solid var(--line-2);
+      font-size: 13px;
+    }
+    .asset:last-child { border-bottom: 0; }
+    .asset-path {
+      color: var(--muted);
+      font-size: 12px;
+      overflow-wrap: anywhere;
+    }
+    .raw {
+      max-height: 260px;
+      overflow: auto;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      border: 1px solid #27272a;
+      border-radius: var(--radius);
+      background: #18181b;
+      color: #e4e4e7;
+      padding: 12px;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .error-card {
+      display: grid;
+      gap: 9px;
+      padding: 13px;
+      margin-bottom: 14px;
+      border: 1px solid #f1b8b4;
+      border-radius: var(--radius);
+      background: var(--danger-bg);
+      color: #7a271a;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    .error-card h3 {
+      font-size: 15px;
+      font-weight: 600;
+    }
+    details { margin-top: 6px; }
+    summary {
+      cursor: pointer;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-size: 13px;
+    }
+    th, td {
+      padding: 10px 9px;
+      border-bottom: 1px solid var(--line-2);
+      text-align: left;
+      vertical-align: middle;
+    }
+    th {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      background: var(--soft-2);
+    }
+    td { overflow: hidden; }
+    .repo-cell,
+    .truncate {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .row-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+    tr.row-failed { background: var(--danger-bg); }
+    tr.row-review { background: var(--blue-bg); }
+
+    @media (max-width: 900px) {
+      .split,
+      .evidence-grid { grid-template-columns: 1fr; }
+      .summary-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 680px) {
+      .topbar { padding: 12px 14px; }
+      .view-nav { padding: 0 14px; }
+      .content { padding: 18px 14px 26px; }
+      .topbar-inner { align-items: flex-start; flex-direction: column; }
+      .actions { justify-content: flex-start; }
+      .form-grid,
+      .summary-grid,
+      .repo-row { grid-template-columns: 1fr; }
+      .panel-header { align-items: flex-start; flex-direction: column; }
+      table, thead, tbody, tr, th, td { display: block; }
+      thead { display: none; }
+      tr { padding: 8px 0; border-bottom: 1px solid var(--line); }
+      td { border: 0; padding: 6px 10px; }
+      td::before {
+        content: attr(data-label);
+        display: block;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+        margin-bottom: 3px;
+      }
+      .row-actions { justify-content: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <main id="workbench" class="app">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">GH</div>
+          <div>
+            <h1>GitHub Trending 视频流水线</h1>
+            <p>采集、生成、质检、审核和导出的本地生产工作台</p>
+          </div>
+        </div>
+        <div class="actions">
+          <span class="health"><span id="healthDot" class="dot"></span><span id="healthText">检测环境中</span></span>
+          <button id="refreshTasks" class="secondary" type="button">刷新任务</button>
+          <button id="newTask" class="secondary" type="button">新建任务</button>
+          <button id="generate" type="button">生成视频</button>
+        </div>
+      </div>
+    </header>
+
+    <nav class="view-nav" id="viewNav" aria-label="工作台页面">
+      <div class="tabs-inner">
+        <button class="nav-button active" type="button" data-view="current">生成工作台</button>
+        <button class="nav-button" type="button" data-view="evidence">视频预览</button>
+        <button class="nav-button" type="button" data-view="create">项目选择</button>
+        <button class="nav-button" type="button" data-view="settings">参数设置</button>
+        <button class="nav-button" type="button" data-view="queue">任务队列</button>
+      </div>
+    </nav>
+
+    <div class="content">
+      <section id="currentView" class="view active" data-view-panel="current">
+        <div class="stack">
+          <section class="split">
+            <div class="stack">
+              <div id="errorPanel"></div>
+              <div class="hero-card">
+                <div class="meta-row" id="taskMeta">
+                  <span class="meta-chip">未选择任务</span>
+                </div>
+                <h2 id="taskHeadline" class="task-title">选择候选项目，或直接生成今日视频</h2>
+                <p id="taskSubline" class="task-copy">系统会从 GitHub Trending 采集项目，生成脚本、配音、字幕、竖屏视频，并在质检通过后进入人工审核。</p>
+              </div>
+
+              <section class="panel">
+                <div class="panel-header">
+                  <div>
+                    <div class="panel-kicker">Pipeline</div>
+                    <h2>流水线进度</h2>
+                  </div>
+                  <span id="currentStatus" class="status">未选择</span>
+                </div>
+                <div class="panel-body">
+                  <div class="pipeline">
+                    <div class="progress-track"><div id="progressFill" class="progress-fill"></div></div>
+                    <div class="pipeline-step" data-step="collect"><span class="step-dot"></span><span>采集项目和元数据</span></div>
+                    <div class="pipeline-step" data-step="score"><span class="step-dot"></span><span>评分、过滤和去重</span></div>
+                    <div class="pipeline-step" data-step="script"><span class="step-dot"></span><span>生成脚本和封面文案</span></div>
+                    <div class="pipeline-step" data-step="tts"><span class="step-dot"></span><span>TTS 配音和字幕时间轴</span></div>
+                    <div class="pipeline-step" data-step="render"><span class="step-dot"></span><span>渲染竖屏视频并质检</span></div>
+                  </div>
+                  <div id="stageText" class="stage">空闲。默认配置会使用当前参数创建一个可预览的视频草稿。</div>
+                </div>
+              </section>
+            </div>
+
+            <aside id="taskActionPanel" class="action-panel">
+              <h3>下一步动作</h3>
+              <p>先发现候选项目，或直接按当前参数生成今日视频。</p>
+              <div class="button-row">
+                <button type="button" onclick="startGeneration()">生成视频</button>
+                <button class="secondary" type="button" onclick="startDiscovery()">发现候选</button>
+              </div>
+            </aside>
+          </section>
+
+          <div id="taskSummary" class="summary-grid"></div>
+        </div>
+      </section>
+
+      <section id="evidenceView" class="view" data-view-panel="evidence">
+        <section class="panel evidence-panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-kicker">Preview</div>
+              <h2>视频预览与审核证据</h2>
+            </div>
+            <button class="secondary" type="button" onclick="reloadCurrent()">刷新状态</button>
+          </div>
+          <div class="panel-body">
+            <div class="evidence-grid">
+              <div class="preview-shell">
+                <div id="mediaBox" class="phone">
+                  <div class="empty-preview">
+                    <b>暂无预览</b>
+                    <span>选择任务或生成视频后显示竖屏内容</span>
+                    <div class="button-row">
+                      <button class="secondary" type="button" onclick="setView('current')">查看当前任务</button>
+                      <button type="button" onclick="startGeneration()">重新生成</button>
+                    </div>
+                  </div>
+                </div>
+                <div id="audioBox"></div>
+              </div>
+              <div class="evidence-stack">
+                <div class="evidence-section">
+                  <div class="section-title">Review</div>
+                  <div id="reviewPanel"></div>
+                </div>
+                <div class="evidence-section">
+                  <div class="section-title">Assets</div>
+                  <div id="assetList" class="asset-list"></div>
+                </div>
+                <div class="evidence-section">
+                  <div class="section-title">Script</div>
+                  <div id="scriptSummary" class="raw">暂无任务</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <section id="createView" class="view" data-view-panel="create">
+        <div class="stack">
+          <section class="panel">
+            <div class="panel-header">
+              <div>
+                <div class="panel-kicker">Select</div>
+                <h2>项目选择</h2>
+              </div>
+              <button id="discoverBtn" class="secondary" type="button">发现候选</button>
+            </div>
+            <div class="panel-body">
+              <div class="field full">
+                <span>直接指定仓库</span>
+                <div class="repo-row">
+                  <input id="repoInput" type="text" placeholder="owner/name" />
+                  <button id="generateRepoBtn" type="button">生成</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section id="candidatePanel" class="panel" style="display:none">
+            <div class="panel-header">
+              <div>
+                <div class="panel-kicker">Candidates</div>
+                <h2>候选推荐</h2>
+              </div>
+              <div class="filters">
+                <button class="filter active" type="button" onclick="clearCandidates()">清除</button>
+              </div>
+            </div>
+            <div class="panel-body" id="candidateList"></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="settingsView" class="view" data-view-panel="settings">
+        <section class="panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-kicker">Settings</div>
+              <h2>生成参数</h2>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="form-grid">
+              <label class="field full">
+                <span>脚本来源</span>
+                <select id="provider">
+                  <option value="minimax" selected>MiniMax CLI</option>
+                  <option value="deepseek">DeepSeek</option>
+                  <option value="local">本地保底脚本</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>候选数量</span>
+                <input id="candidateLimit" type="number" min="1" max="20" value="5" />
+              </label>
+              <label class="field">
+                <span>渲染模式</span>
+                <select id="renderMode">
+                  <option value="ffmpeg_info">FFmpeg 竖屏模板</option>
+                  <option value="fake">Mock 渲染</option>
+                </select>
+              </label>
+              <label class="field full">
+                <span>配音模式</span>
+                <select id="ttsMode">
+                  <option value="minimax" selected>MiniMax CLI TTS</option>
+                  <option value="edge_tts">Edge TTS</option>
+                  <option value="windows_sapi">Windows SAPI</option>
+                  <option value="minimax_http">MiniMax HTTP TTS</option>
+                  <option value="mock">本地 Mock TTS</option>
+                </select>
+              </label>
+            </div>
+            <label class="check">
+              <input id="deepseekFallback" type="checkbox" />
+              <span>强制使用 DeepSeek 生成脚本</span>
+            </label>
+            <div class="settings-stack" style="margin-top:18px">
+              <section class="settings-section">
+                <h3>参数预设</h3>
+                <div class="preset-row">
+                  <label class="field">
+                    <span>当前预设</span>
+                    <select id="presetSelect"></select>
+                  </label>
+                  <button id="savePresetBtn" type="button" class="secondary">保存</button>
+                  <button id="saveAsPresetBtn" type="button" class="secondary">另存</button>
+                  <button id="deletePresetBtn" type="button" class="danger">删除</button>
+                </div>
+              </section>
+              <section class="settings-section">
+                <h3>脚本生成</h3>
+                <div class="form-grid">
+                  <label class="field"><span>模型名称</span><input id="scriptModel" type="text" value="MiniMax-M2.7" /></label>
+                  <label class="field"><span>风格</span><input id="scriptStyle" type="text" value="code_ppt" /></label>
+                  <label class="field"><span>目标时长（秒）</span><input id="scriptDurationSec" type="number" min="30" max="180" value="75" /></label>
+                  <label class="field"><span>受众</span><input id="scriptAudience" type="text" value="chinese_developers" /></label>
+                  <label class="field"><span>温度</span><input id="scriptTemperature" type="number" min="0" max="2" step="0.05" value="0.35" /></label>
+                  <label class="field"><span>Top P</span><input id="scriptTopP" type="number" min="0" max="1" step="0.05" placeholder="可选" /></label>
+                  <label class="field"><span>Max Tokens</span><input id="scriptMaxTokens" type="number" min="256" max="16000" value="4096" /></label>
+                  <label class="field full"><span>系统提示词</span><textarea id="scriptSystemPrompt">你是中文科技短视频编导。只输出严格 JSON，不要 markdown。所有讲稿、标题、封面、屏幕文字、简介和 CTA 必须是中文。</textarea></label>
+                  <label class="field full"><span>用户提示词模板</span><textarea id="scriptUserPromptTemplate" placeholder="留空使用默认模板。可用变量：{repoFullName} {repoUrl} {description} {language} {topics} {stars} {forks} {todayStars} {readmeSummary} {recommendReason} {style} {durationSec} {audience}"></textarea></label>
+                </div>
+              </section>
+              <section class="settings-section">
+                <h3>语音生成</h3>
+                <p class="settings-help">默认使用 MiniMax CLI；这些字段对应 mmx speech synthesize 的可调参数。</p>
+                <div class="form-grid">
+                  <label class="field"><span>TTS 模型</span><input id="ttsModel" type="text" value="speech-2.8-hd" /></label>
+                  <label class="field"><span>Voice ID</span><input id="ttsVoiceId" type="text" value="default_cn_tech" /></label>
+                  <label class="field"><span>语速</span><input id="ttsSpeed" type="number" min="0.5" max="2" step="0.05" value="1.2" /></label>
+                  <label class="field"><span>音量</span><input id="ttsVolume" type="number" min="0" max="10" step="0.1" value="1" /></label>
+                  <label class="field"><span>音高</span><input id="ttsPitch" type="number" min="-12" max="12" step="1" value="0" /></label>
+                  <label class="field"><span>格式</span><select id="ttsFormat"><option value="mp3" selected>mp3</option><option value="wav">wav</option><option value="flac">flac</option><option value="pcm">pcm</option></select></label>
+                  <label class="field"><span>采样率</span><input id="ttsSampleRate" type="number" min="8000" max="48000" step="1000" value="32000" /></label>
+                  <label class="field"><span>比特率</span><input id="ttsBitrate" type="number" min="32000" max="320000" step="16000" value="128000" /></label>
+                  <label class="field"><span>声道</span><select id="ttsChannels"><option value="1" selected>1</option><option value="2">2</option></select></label>
+                  <label class="field"><span>语言增强</span><input id="ttsLanguage" type="text" value="Chinese" /></label>
+                  <label class="check"><input id="ttsSubtitles" type="checkbox" /><span>请求 CLI 字幕</span></label>
+                  <label class="field full"><span>发音替换</span><textarea id="ttsPronunciation" placeholder="每行一个：GitHub=吉特哈布"></textarea></label>
+                </div>
+              </section>
+              <section class="settings-section">
+                <h3>画面生成（规则化卡片模板）</h3>
+                <div class="form-grid">
+                  <label class="field"><span>主题</span><select id="visualTheme"><option value="auto" selected>自动轮换</option><option value="blue">蓝色</option><option value="green">绿色</option><option value="amber">琥珀色</option></select></label>
+                  <label class="field"><span>帧率</span><input id="visualFps" type="number" min="12" max="60" value="30" /></label>
+                  <label class="field"><span>宽度</span><input id="visualWidth" type="number" min="720" max="2160" value="1080" /></label>
+                  <label class="field"><span>高度</span><input id="visualHeight" type="number" min="1280" max="3840" value="1920" /></label>
+                  <label class="field"><span>标签文字</span><input id="visualLabel" type="text" value="GITHUB DAILY" /></label>
+                  <label class="field"><span>要点卡片数</span><input id="visualBulletCount" type="number" min="0" max="6" value="3" /></label>
+                  <label class="field"><span>主边距</span><input id="visualMargin" type="number" min="24" max="220" value="96" /></label>
+                  <label class="field"><span>外框边距</span><input id="visualOuterMargin" type="number" min="0" max="160" value="48" /></label>
+                  <label class="field"><span>标题字号</span><input id="visualTitleSize" type="number" min="32" max="96" value="62" /></label>
+                  <label class="field"><span>正文字号</span><input id="visualBodySize" type="number" min="20" max="64" value="36" /></label>
+                  <label class="field"><span>摘要字号</span><input id="visualSummarySize" type="number" min="24" max="72" value="42" /></label>
+                  <label class="field"><span>小字字号</span><input id="visualSmallSize" type="number" min="16" max="52" value="30" /></label>
+                  <label class="field"><span>字幕上边</span><input id="visualSubtitleTop" type="number" min="400" max="3000" value="1288" /></label>
+                  <label class="field"><span>字幕下边</span><input id="visualSubtitleBottom" type="number" min="600" max="3600" value="1688" /></label>
+                  <label class="field full"><span>底部来源文字</span><input id="visualSourceText" type="text" value="素材来源：GitHub 公开信息 / README / 仓库元数据" /></label>
+                  <label class="check"><input id="visualShowGrid" type="checkbox" checked /><span>显示背景网格</span></label>
+                  <label class="check"><input id="visualShowSubtitlePanel" type="checkbox" checked /><span>显示字幕面板</span></label>
+                  <label class="check"><input id="visualShowStep" type="checkbox" checked /><span>显示页码</span></label>
+                </div>
+                <ol class="rule-list">
+                  <li>每个脚本 segment 按 TTS slideTimeline 生成一张竖屏卡片；无 segment 时生成一张兜底封面卡。</li>
+                  <li>第一张卡片标题使用 coverText，后续标题按“项目看点、核心能力、使用场景、上手建议”等规则递进。</li>
+                  <li>screenText 作为主体文案并拆成要点卡片，voiceText 或字幕 items 进入底部字幕面板。</li>
+                  <li>每张卡片时长优先使用 totalVisualDurationMs，其次使用 visualDurationMs/audioDurationMs。</li>
+                </ol>
+              </section>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <section id="queueView" class="view" data-view-panel="queue">
+        <section class="panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-kicker">Queue</div>
+              <h2>任务队列</h2>
+            </div>
+            <div class="filters" id="filters">
+              <button class="filter active" type="button" data-filter="all">全部</button>
+              <button class="filter" type="button" data-filter="running">生成中</button>
+              <button class="filter" type="button" data-filter="review">待审核</button>
+              <button class="filter" type="button" data-filter="failed">失败</button>
+              <button class="filter" type="button" data-filter="done">已完成</button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:150px">Task ID</th>
+                  <th style="width:210px">Repo</th>
+                  <th style="width:90px">状态</th>
+                  <th>标题</th>
+                  <th style="width:150px">更新时间</th>
+                  <th style="width:210px">失败原因</th>
+                  <th style="width:92px"></th>
+                </tr>
+              </thead>
+              <tbody id="recentTasks"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const state = {
+      currentTaskId: null,
+      currentError: null,
+      recentTasks: [],
+      filter: "all",
+      stageTimer: null,
+      stageIndex: 0,
+      presets: [],
+      activePresetId: null,
+    };
+
+    const $ = (id) => document.getElementById(id);
+    const runningStatuses = new Set(["created", "collected", "scored", "script_generated", "tts_generated", "rendering", "rendered", "rejected"]);
+    const progressByStatus = {
+      created: 8,
+      collected: 25,
+      scored: 40,
+      script_generated: 58,
+      tts_generated: 75,
+      rendering: 86,
+      rendered: 94,
+      review_pending: 100,
+      approved: 100,
+      published_manual: 100,
+      failed: 100,
+    };
+    const stepOrder = ["collect", "score", "script", "tts", "render"];
+    const stepStatus = {
+      collect: ["collected", "scored", "script_generated", "tts_generated", "rendering", "rendered", "review_pending", "approved", "published_manual"],
+      score: ["scored", "script_generated", "tts_generated", "rendering", "rendered", "review_pending", "approved", "published_manual"],
+      script: ["script_generated", "tts_generated", "rendering", "rendered", "review_pending", "approved", "published_manual"],
+      tts: ["tts_generated", "rendering", "rendered", "review_pending", "approved", "published_manual"],
+      render: ["rendered", "review_pending", "approved", "published_manual"],
+    };
+
+    function setView(view) {
+      document.querySelectorAll("[data-view-panel]").forEach((panel) => {
+        panel.classList.toggle("active", panel.dataset.viewPanel === view);
+      });
+      document.querySelectorAll(".nav-button").forEach((button) => {
+        button.classList.toggle("active", button.dataset.view === view);
+      });
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    async function api(path, options = {}) {
+      const response = await fetch(path, options);
+      const type = response.headers.get("Content-Type") || "";
+      if (!type.includes("application/json")) {
+        throw { code: "HTTP_ERROR", message: `HTTP ${response.status}` };
+      }
+      const body = await response.json();
+      if (!response.ok || body.success === false) {
+        throw body.error || { code: "API_ERROR", message: "请求失败" };
+      }
+      return body;
+    }
+
+    function statusLabel(status) {
+      const labels = {
+        created: "已创建",
+        collected: "已采集",
+        scored: "已评分",
+        script_generated: "脚本完成",
+        tts_generated: "配音完成",
+        rendering: "渲染中",
+        rendered: "渲染完成",
+        review_pending: "待审核",
+        approved: "已通过",
+        rejected: "已驳回",
+        failed: "失败",
+        published_manual: "已发布",
+      };
+      return labels[status] || status || "未选择";
+    }
+
+    function statusBadge(status) {
+      return `<span class="status ${escapeHtml(status)}">${escapeHtml(statusLabel(status))}</span>`;
+    }
+
+    function isDoneStatus(status) {
+      return ["review_pending", "approved", "published_manual"].includes(status);
+    }
+
+    function statusTone(status) {
+      if (status === "failed") return "failed";
+      if (isDoneStatus(status)) return "done";
+      return "";
+    }
+
+    function shortTaskId(taskId) {
+      return String(taskId || "").replace(/^task_/, "").slice(0, 8) || "-";
+    }
+
+    function errorSummary(error) {
+      if (!error) return "";
+      const detail = error.detail || {};
+      if (error.message) return error.message;
+      if (detail.reason) return detail.reason;
+      return error.code || "未知错误";
+    }
+
+    function fixCommand(error) {
+      const code = error && error.code;
+      if (code === "FFMPEG_TEMPLATE_RENDER_FAILED" || code === "FFMPEG_PLACEHOLDER_RENDER_FAILED") return "ffmpeg -version";
+      if (code === "MINIMAX_CLI_FAILED" || code === "MINIMAX_TTS_FAILED") return "mmx auth status";
+      if (code === "EDGE_TTS_FAILED") return "python -m edge_tts --help";
+      if (code === "WINDOWS_TTS_FAILED") return "powershell -NoProfile -Command \"Add-Type -AssemblyName System.Speech\"";
+      return "pytest";
+    }
+
+    function renderError(error) {
+      state.currentError = error || null;
+      if (!error) {
+        $("errorPanel").innerHTML = "";
+        return;
+      }
+      $("errorPanel").innerHTML = `
+        <div id="errorCard" class="error-card">
+          <h3>${escapeHtml(error.code || "生成失败")}</h3>
+          <div>${escapeHtml(errorSummary(error))}</div>
+          <div class="button-row">
+            <button class="secondary" type="button" onclick="copyError()">复制错误</button>
+            <button class="secondary" type="button" onclick="copyFixCommand()">复制修复命令</button>
+            <button class="secondary" type="button" onclick="reloadCurrent()">重新检测</button>
+          </div>
+          <details>
+            <summary>技术详情</summary>
+            <pre class="raw">${escapeHtml(JSON.stringify(error, null, 2))}</pre>
+          </details>
+        </div>
+      `;
+    }
+
+    async function copyError() {
+      if (state.currentError) await navigator.clipboard.writeText(JSON.stringify(state.currentError, null, 2));
+    }
+
+    async function copyFixCommand() {
+      await navigator.clipboard.writeText(fixCommand(state.currentError));
+    }
+
+    function focusError() {
+      setView("current");
+      const node = $("errorCard");
+      if (node) node.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    function focusEvidence() {
+      setView("evidence");
+      const node = document.querySelector(".evidence-panel");
+      if (node) node.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function updateProgress(status) {
+      const progress = progressByStatus[status] || 0;
+      $("progressFill").style.width = `${progress}%`;
+      document.querySelectorAll(".pipeline-step").forEach((item) => {
+        const step = item.dataset.step;
+        item.classList.toggle("done", (stepStatus[step] || []).includes(status));
+        item.classList.toggle("active", !isDoneStatus(status) && progress > 0 && stepOrder[Math.min(stepOrder.length - 1, Math.floor(progress / 22))] === step);
+      });
+    }
+
+    function startStageLoop() {
+      const stages = ["采集 GitHub Trending", "计算推荐分", "生成脚本", "合成配音和字幕", "渲染竖屏视频", "等待质量检查"];
+      state.stageIndex = 0;
+      $("stageText").textContent = stages[0];
+      updateProgress("created");
+      clearInterval(state.stageTimer);
+      state.stageTimer = setInterval(() => {
+        state.stageIndex = Math.min(stages.length - 1, state.stageIndex + 1);
+        $("stageText").textContent = stages[state.stageIndex];
+        $("progressFill").style.width = `${Math.min(92, 10 + state.stageIndex * 16)}%`;
+      }, 1400);
+    }
+
+    function stopStageLoop(message) {
+      clearInterval(state.stageTimer);
+      state.stageTimer = null;
+      $("stageText").textContent = message;
+    }
+
+    async function checkHealth() {
+      try {
+        const body = await api("/health");
+        $("healthDot").classList.toggle("ok", body.data.status === "ok");
+        $("healthText").textContent = "运行中";
+      } catch {
+        $("healthDot").classList.remove("ok");
+        $("healthText").textContent = "接口异常";
+      }
+    }
+
+    async function loadRecentTasks() {
+      try {
+        const body = await api("/api/tasks/recent?limit=50");
+        state.recentTasks = body.data.tasks || [];
+        renderRecentTasks();
+      } catch (error) {
+        renderError(error);
+      }
+    }
+
+    function taskMatchesFilter(task) {
+      if (state.filter === "all") return true;
+      if (state.filter === "running") return runningStatuses.has(task.status);
+      if (state.filter === "review") return task.status === "review_pending";
+      if (state.filter === "failed") return task.status === "failed";
+      if (state.filter === "done") return ["approved", "published_manual"].includes(task.status);
+      return true;
+    }
+
+    function renderRecentTasks() {
+      const tasks = state.recentTasks.filter(taskMatchesFilter);
+      $("recentTasks").innerHTML = tasks.length ? tasks.map((task) => {
+        const rowClass = task.status === "failed" ? "row-failed" : task.status === "review_pending" ? "row-review" : "";
+        const reason = task.lastError ? errorSummary(task.lastError) : "";
+        return `
+          <tr class="${rowClass}">
+            <td data-label="Task ID"><code>${escapeHtml(shortTaskId(task.taskId))}</code></td>
+            <td data-label="Repo" class="repo-cell"><a href="${escapeHtml(task.repoUrl)}" target="_blank" rel="noreferrer">${escapeHtml(task.repoFullName)}</a></td>
+            <td data-label="状态">${statusBadge(task.status)}</td>
+            <td data-label="标题" class="truncate" title="${escapeHtml(task.title || "-")}">${escapeHtml(task.title || "-")}</td>
+            <td data-label="更新时间">${escapeHtml(task.updatedAt || "-")}</td>
+            <td data-label="失败原因" class="truncate" title="${escapeHtml(reason)}">${escapeHtml(reason)}</td>
+            <td data-label="操作"><div class="row-actions"><button class="secondary" type="button" onclick="loadTaskDetail('${escapeHtml(task.taskId)}')">详情</button></div></td>
+          </tr>
+        `;
+      }).join("") : `<tr><td colspan="7" style="color:var(--muted)">暂无任务</td></tr>`;
+    }
+
+    async function loadTaskDetail(taskId) {
+      try {
+        const body = await api(`/api/tasks/${encodeURIComponent(taskId)}`);
+        state.currentTaskId = taskId;
+        renderError(null);
+        renderDetails(body.data);
+        renderPreview(body.data);
+        setView("current");
+      } catch (error) {
+        renderError(error);
+      }
+    }
+
+    async function reloadCurrent() {
+      await checkHealth();
+      if (state.currentTaskId) await loadTaskDetail(state.currentTaskId);
+      await loadRecentTasks();
+    }
+
+    function newTask() {
+      state.currentTaskId = null;
+      renderError(null);
+      updateProgress("");
+      $("currentStatus").outerHTML = '<span id="currentStatus" class="status">未选择</span>';
+      $("taskMeta").innerHTML = '<span class="meta-chip">未选择任务</span>';
+      $("taskHeadline").textContent = "选择候选项目，或直接生成今日视频";
+      $("taskSubline").textContent = "系统会从 GitHub Trending 采集项目，生成脚本、配音、字幕、竖屏视频，并在质检通过后进入人工审核。";
+      $("taskSummary").innerHTML = "";
+      $("taskActionPanel").className = "action-panel";
+      $("taskActionPanel").innerHTML = `
+        <h3>下一步动作</h3>
+        <p>先发现候选项目，或直接按当前参数生成今日视频。</p>
+        <div class="button-row">
+          <button type="button" onclick="startGeneration()">生成视频</button>
+          <button class="secondary" type="button" onclick="startDiscovery()">发现候选</button>
+        </div>
+      `;
+      $("reviewPanel").innerHTML = "";
+      $("assetList").innerHTML = "";
+      $("scriptSummary").textContent = "暂无任务";
+      renderEmptyPreview("暂无预览", "选择任务或生成视频后显示竖屏内容");
+      setView("create");
+    }
+
+    async function startGeneration() {
+      const button = $("generate");
+      button.disabled = true;
+      renderError(null);
+      startStageLoop();
+      try {
+        const body = await api("/api/video/generate-real", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(buildGenPayload())
+        });
+        stopStageLoop(`生成完成：${body.data.taskId}`);
+        await loadTaskDetail(body.data.taskId);
+        await loadRecentTasks();
+      } catch (error) {
+        stopStageLoop("生成失败，请查看当前任务中的失败原因");
+        setView("current");
+        renderError(error);
+        renderEmptyPreview("暂无预览", "视频生成失败，未产出 video 或 cover 文件");
+        await loadRecentTasks();
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    function buildGenPayload() {
+      return {
+        provider: $("provider").value,
+        candidateLimit: Number($("candidateLimit").value || 5),
+        useDeepSeek: $("deepseekFallback").checked,
+        ttsMode: $("ttsMode").value,
+        renderMode: $("renderMode").value
+      };
+    }
+
+    async function startDiscovery() {
+      const button = $("discoverBtn");
+      button.disabled = true;
+      setView("create");
+      renderError(null);
+      try {
+        const body = await api("/api/discover", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ candidateLimit: Number($("candidateLimit").value || 5) })
+        });
+        renderCandidates(body.data.recommended || []);
+      } catch (error) {
+        renderError(error);
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    async function generateFromSelection(repoFullName) {
+      renderError(null);
+      startStageLoop();
+      try {
+        const body = await api("/api/video/generate-from-selection", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ repoFullName, ...buildGenPayload() })
+        });
+        stopStageLoop(`生成完成：${body.data.taskId}`);
+        await loadTaskDetail(body.data.taskId);
+        await loadRecentTasks();
+      } catch (error) {
+        stopStageLoop("生成失败，请查看当前任务中的失败原因");
+        setView("current");
+        renderError(error);
+        renderEmptyPreview("暂无预览", "视频生成失败，未产出 video 或 cover 文件");
+        await loadRecentTasks();
+      }
+    }
+
+    async function generateForRepo() {
+      const repo = $("repoInput").value.trim();
+      if (!repo || !repo.includes("/")) {
+        renderError({ code: "INVALID_REPO", message: "请输入格式为 owner/name 的仓库名" });
+        return;
+      }
+      renderError(null);
+      startStageLoop();
+      try {
+        const body = await api("/api/video/generate-for-repo", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ repoFullName: repo, ...buildGenPayload() })
+        });
+        stopStageLoop(`生成完成：${body.data.taskId}`);
+        await loadTaskDetail(body.data.taskId);
+        await loadRecentTasks();
+      } catch (error) {
+        stopStageLoop("生成失败，请查看当前任务中的失败原因");
+        setView("current");
+        renderError(error);
+        renderEmptyPreview("暂无预览", "视频生成失败，未产出 video 或 cover 文件");
+        await loadRecentTasks();
+      }
+    }
+
+    function renderCandidates(candidates) {
+      const panel = $("candidatePanel");
+      const list = $("candidateList");
+      if (!candidates.length) {
+        list.className = "";
+        list.innerHTML = '<div style="color:var(--muted);font-size:13px">无可用候选项目</div>';
+        panel.style.display = "";
+        return;
+      }
+      list.innerHTML = candidates.map((c) => {
+        const risk = (c.riskFlags || []).join(", ") || "无";
+        const score = c.score != null ? c.score : "-";
+        return `
+          <div class="candidate-card">
+            <div class="candidate-title">
+              <b><a href="${escapeHtml(c.repoUrl)}" target="_blank" rel="noreferrer">${escapeHtml(c.repoFullName)}</a></b>
+              <span class="meta-chip">评分 ${escapeHtml(score)}</span>
+            </div>
+            <div class="meta-row">
+              <span class="meta-chip">${escapeHtml(c.language || "Unknown")}</span>
+              <span class="meta-chip">Stars ${escapeHtml(c.stars)}</span>
+              <span class="meta-chip">今日 +${escapeHtml(c.todayStars)}</span>
+            </div>
+            <p>${escapeHtml(c.description || "")}</p>
+            <p>推荐理由：${escapeHtml(c.recommendReason || "-")}</p>
+            <p style="color:var(--danger)">风险：${escapeHtml(risk)}</p>
+            <div class="button-row">
+              <button type="button" onclick="generateFromSelection('${escapeHtml(c.repoFullName)}')">生成视频</button>
+              <button class="secondary" type="button" onclick="window.open('${escapeHtml(c.repoUrl)}','_blank')">查看 GitHub</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+      list.className = "candidate-grid";
+      panel.style.display = "";
+      setView("create");
+    }
+
+    function clearCandidates() {
+      $("candidatePanel").style.display = "none";
+      $("candidateList").innerHTML = "";
+      $("candidateList").className = "";
+    }
+
+    function renderEmptyPreview(title, message) {
+      $("mediaBox").innerHTML = `
+        <div class="empty-preview">
+          <b>${escapeHtml(title)}</b>
+          <span>${escapeHtml(message)}</span>
+          <div class="button-row">
+            <button class="secondary" type="button" onclick="focusError()">查看失败原因</button>
+            <button type="button" onclick="startGeneration()">重新生成</button>
+          </div>
+        </div>
+      `;
+      $("audioBox").innerHTML = "";
+    }
+
+    function renderPreview(detail) {
+      const task = detail.task;
+      const assets = detail.assetsByType || {};
+      $("currentStatus").outerHTML = statusBadge(task.status).replace("<span", '<span id="currentStatus"');
+      updateProgress(task.status);
+      if (assets.video) {
+        $("mediaBox").innerHTML = `<video controls src="${escapeHtml(assets.video.contentUrl)}"></video>`;
+      } else if (assets.cover) {
+        $("mediaBox").innerHTML = `<img alt="封面" src="${escapeHtml(assets.cover.contentUrl)}" />`;
+      } else {
+        renderEmptyPreview("暂无预览", "视频尚未产出，或当前任务已失败");
+      }
+      $("audioBox").innerHTML = assets.audio
+        ? `<audio controls src="${escapeHtml(assets.audio.contentUrl)}"></audio>`
+        : "";
+    }
+
+    function renderTaskAction(detail) {
+      const task = detail.task;
+      const status = task.status;
+      let title = "继续推进任务";
+      let message = "根据当前状态检查证据，并执行下一步生产动作。";
+      let actions = '<button type="button" onclick="reloadCurrent()">刷新状态</button>';
+
+      if (status === "failed") {
+        title = "修复失败后重试";
+        message = task.lastError ? errorSummary(task.lastError) : "任务失败，但没有返回结构化错误。";
+        actions = `
+          <button type="button" onclick="startGeneration()">按当前配置重新生成</button>
+          <button class="secondary" type="button" onclick="copyError()">复制错误</button>
+          <button class="secondary" type="button" onclick="copyFixCommand()">复制修复命令</button>
+        `;
+      } else if (status === "review_pending") {
+        title = "审核质量证据";
+        message = "任务已生成到待审核阶段。先检查预览、脚本摘要和资产，再决定通过或驳回。";
+        actions = `
+          <button type="button" onclick="submitReview('approved')">通过审核</button>
+          <button class="secondary" type="button" onclick="focusEvidence()">查看证据</button>
+          <button class="danger" type="button" onclick="submitReview('rejected')">驳回并重试</button>
+        `;
+      } else if (status === "approved") {
+        title = "导出发布包";
+        message = "审核已通过，可以导出多平台发布包并进入人工发布记录流程。";
+        actions = `
+          <button type="button" onclick="exportPackage()">导出发布包</button>
+          <button class="secondary" type="button" onclick="focusEvidence()">查看资产</button>
+        `;
+      } else if (status === "published_manual") {
+        title = "任务已完成";
+        message = "发布记录已写入，当前任务可作为完成样本留档。";
+        actions = '<button type="button" onclick="focusEvidence()">查看发布记录</button>';
+      } else if (runningStatuses.has(status)) {
+        title = "等待生成推进";
+        message = "任务仍在生产链路中。刷新状态以获取最新阶段，失败时会显示恢复建议。";
+        actions = `
+          <button type="button" onclick="reloadCurrent()">刷新状态</button>
+          <button class="secondary" type="button" onclick="focusEvidence()">查看已产出证据</button>
+        `;
+      }
+
+      $("taskActionPanel").className = `action-panel ${statusTone(status)}`.trim();
+      $("taskActionPanel").innerHTML = `
+        <h3>${escapeHtml(title)}</h3>
+        <p>${escapeHtml(message)}</p>
+        <div class="button-row">${actions}</div>
+      `;
+    }
+
+    function renderDetails(detail) {
+      const task = detail.task;
+      const candidate = detail.candidate || {};
+      const failedChecks = detail.quality.failedChecks || [];
+      const failText = task.lastError ? errorSummary(task.lastError) : "无";
+      const title = detail.scriptSummary && detail.scriptSummary.title ? detail.scriptSummary.title : task.repoFullName || "当前任务";
+      $("taskMeta").innerHTML = `
+        ${statusBadge(task.status)}
+        <span class="meta-chip">${escapeHtml(shortTaskId(task.taskId))}</span>
+        <span class="meta-chip">${escapeHtml(task.updatedAt || "未记录更新时间")}</span>
+      `;
+      $("taskHeadline").textContent = title;
+      $("taskSubline").textContent = task.repoFullName
+        ? `${task.repoFullName} · ${candidate.recommendReason || "暂无推荐理由"}`
+        : "暂无仓库信息";
+      renderTaskAction(detail);
+      $("taskSummary").innerHTML = `
+        <div class="summary-row"><b>任务状态</b><span>${statusBadge(task.status)}</span></div>
+        <div class="summary-row"><b>Repo</b><span>${escapeHtml(task.repoFullName)}</span></div>
+        <div class="summary-row"><b>失败原因</b><span>${escapeHtml(failText)}</span></div>
+        <div class="summary-row"><b>质量检查</b><span>${detail.quality.passed ? "通过" : "未通过"}${failedChecks.length ? "：" + escapeHtml(failedChecks.join("、")) : ""}</span></div>
+        <div class="summary-row"><b>Task ID</b><span><code>${escapeHtml(task.taskId)}</code></span></div>
+        <div class="summary-row"><b>推荐理由</b><span>${escapeHtml(candidate.recommendReason || "-")}</span></div>
+      `;
+      $("assetList").innerHTML = detail.assets.length
+        ? detail.assets.map(assetItem).join("")
+        : '<div style="color:var(--muted);font-size:13px">暂无资产</div>';
+      $("scriptSummary").textContent = JSON.stringify(detail.scriptSummary || {}, null, 2);
+      renderReviewPanel(detail);
+    }
+
+    function assetItem(asset) {
+      return `
+        <div class="asset">
+          <b>${escapeHtml(asset.type)}</b>
+          <div>
+            <a href="${escapeHtml(asset.contentUrl)}" target="_blank" rel="noreferrer">预览</a>
+            <div class="asset-path">${escapeHtml(asset.localUrl)}</div>
+          </div>
+          <code>${escapeHtml(asset.contentType)}</code>
+        </div>
+      `;
+    }
+
+    function renderReviewPanel(detail) {
+      const task = detail.task;
+      const records = detail.publishRecords || [];
+      if (task.status === "review_pending") {
+        $("reviewPanel").innerHTML = `
+          <textarea id="reviewComment" placeholder="审核备注"></textarea>
+          <div class="button-row">
+            <button type="button" onclick="submitReview('approved')">通过审核</button>
+            <button class="danger" type="button" onclick="submitReview('rejected')">驳回并重试</button>
+          </div>
+        `;
+      } else if (task.status === "approved") {
+        $("reviewPanel").innerHTML = `
+          <div class="button-row">
+            <button type="button" onclick="exportPackage()">导出发布包</button>
+          </div>
+        `;
+      } else if (task.status === "published_manual") {
+        $("reviewPanel").innerHTML = `<div class="raw">${escapeHtml(JSON.stringify(records, null, 2))}</div>`;
+      } else {
+        $("reviewPanel").innerHTML = "";
+      }
+    }
+
+    async function submitReview(decision) {
+      if (!state.currentTaskId) return;
+      try {
+        const comment = $("reviewComment") ? $("reviewComment").value : "";
+        await api("/api/review/decision", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            taskId: state.currentTaskId,
+            decision,
+            comment,
+            retryAction: decision === "rejected" ? "regenerate_script" : null,
+            reviewer: "workbench"
+          })
+        });
+        await reloadCurrent();
+      } catch (error) {
+        renderError(error);
+      }
+    }
+
+    async function exportPackage() {
+      if (!state.currentTaskId) return;
+      try {
+        const body = await api("/api/jobs/export-publish-package", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            taskId: state.currentTaskId,
+            platforms: ["douyin", "wechat_channels", "bilibili", "xiaohongshu"]
+          })
+        });
+        $("scriptSummary").textContent = JSON.stringify(body.data, null, 2);
+        await reloadCurrent();
+      } catch (error) {
+        renderError(error);
+      }
+    }
+
+    $("generate").addEventListener("click", startGeneration);
+    $("discoverBtn").addEventListener("click", startDiscovery);
+    $("generateRepoBtn").addEventListener("click", generateForRepo);
+    $("refreshTasks").addEventListener("click", async () => {
+      await loadRecentTasks();
+      setView("queue");
+    });
+    $("newTask").addEventListener("click", newTask);
+    $("viewNav").addEventListener("click", (event) => {
+      const button = event.target.closest(".nav-button");
+      if (!button) return;
+      setView(button.dataset.view);
+    });
+    $("filters").addEventListener("click", (event) => {
+      const button = event.target.closest(".filter");
+      if (!button) return;
+      state.filter = button.dataset.filter;
+      document.querySelectorAll("#filters .filter").forEach((item) => item.classList.toggle("active", item === button));
+      renderRecentTasks();
+    });
+
+    checkHealth();
+    loadRecentTasks();
+  </script>
+</body>
+</html>
