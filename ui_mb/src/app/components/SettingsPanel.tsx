@@ -7,25 +7,25 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Separator } from "./ui/separator";
 import { Check } from "lucide-react";
 
-const DEFAULT_PROMPT = `你是一位专业的科技短视频脚本作家。请根据以下 GitHub 项目信息，生成一段 60 秒左右的短视频脚本。
+const DEFAULT_PROMPT = `You are a professional technology short-video scriptwriter. Based on the following GitHub repository details, generate an engaging 60-second video script.
 
-要求：
-- 开头 5 秒：用一句话吸引眼球，点出项目核心价值
-- 中间 40 秒：介绍项目功能、使用场景、技术亮点
-- 结尾 15 秒：总结推荐理由，引导关注点赞
+Structure:
+- Hook (0-5s): One punchy sentence highlighting the core problem and solution.
+- Value (5-45s): Key features, practical use cases, and technical strengths.
+- CTA (45-60s): Summary recommendation and call to action to check out the repo.
 
-风格：口语化、有节奏感，避免技术术语堆砌。`;
+Style: Conversational, clear, well-paced, developer-focused without unnecessary jargon.`;
 
 const TEMPLATES = [
-  { id: "tech-dark", name: "科技暗黑" },
-  { id: "minimal-light", name: "简约白底" },
-  { id: "neon-cyber", name: "霓虹赛博" },
-  { id: "github-green", name: "GitHub 绿" },
+  { id: "tech-dark", name: "Tech Dark" },
+  { id: "minimal-light", name: "Minimal Light" },
+  { id: "neon-cyber", name: "Neon Cyber" },
+  { id: "github-green", name: "GitHub Green" },
 ];
 
 const VOICES: Record<string, string[]> = {
   openai: ["alloy", "echo", "fable", "onyx", "nova", "shimmer"],
-  azure: ["zh-CN-XiaoxiaoNeural", "zh-CN-YunxiNeural", "zh-CN-XiaoyiNeural", "zh-CN-YunjianNeural"],
+  azure: ["en-US-GuyNeural", "en-US-AriaNeural", "en-US-JennyNeural", "en-GB-RyanNeural"],
   elevenlabs: ["Rachel", "Drew", "Clyde", "Paul", "Domi", "Dave"],
 };
 
@@ -53,6 +53,59 @@ export function SettingsPanel() {
   const [backgroundEffect, setBackgroundEffect] = useState("particles");
   const [pacing, setPacing] = useState([3]);
 
+  const [serverStatus, setServerStatus] = useState<"Stopped" | "Starting" | "Running" | "Error">("Running");
+  const [lanUrl, setLanUrl] = useState("http://192.168.1.152:8000");
+  const [serverMessage, setServerMessage] = useState("");
+  const [isBusy, setIsBusy] = useState(false);
+
+  const fetchStatus = async () => {
+    try {
+      const res = await fetch("/api/server/status");
+      if (res.ok) {
+        const body = await res.json();
+        if (body.data) {
+          setServerStatus(body.data.status);
+          if (body.data.lanUrl) setLanUrl(body.data.lanUrl);
+          if (body.data.message) setServerMessage(body.data.message);
+          return;
+        }
+      }
+    } catch (_) {}
+    try {
+      const res2 = await fetch("http://127.0.0.1:8001/api/server/status");
+      if (res2.ok) {
+        const body2 = await res2.json();
+        if (body2.data) {
+          setServerStatus(body2.data.status);
+          if (body2.data.lanUrl) setLanUrl(body2.data.lanUrl);
+          if (body2.data.message) setServerMessage(body2.data.message);
+          return;
+        }
+      }
+    } catch (_) {}
+    setServerStatus("Stopped");
+  };
+
+  const callServerCmd = async (action: "start" | "restart" | "stop") => {
+    setIsBusy(true);
+    setServerStatus("Starting");
+    try {
+      const res = await fetch(`/api/server/${action}`, { method: "POST" });
+      if (res.ok) {
+        const b = await res.json();
+        if (b.data?.message) setServerMessage(b.data.message);
+      }
+    } catch (_) {
+      try {
+        await fetch(`http://127.0.0.1:8001/api/server/${action}`, { method: "POST" });
+      } catch (_) {}
+    }
+    setTimeout(() => {
+      setIsBusy(false);
+      fetchStatus();
+    }, 1500);
+  };
+
   const handleSavePrompt = () => {
     setIsEditingPrompt(false);
     setPromptSaved(true);
@@ -69,10 +122,10 @@ export function SettingsPanel() {
     <div className="space-y-8">
       {/* Script Settings */}
       <section>
-        <SectionHeader label="脚本生成" />
+        <SectionHeader label="Script Generation" />
         <div className="bg-card border border-border rounded-md p-5 space-y-4">
           <div className="space-y-2">
-            <Label className="text-sm text-foreground">生成 Prompt</Label>
+            <Label className="text-sm text-foreground">Prompt Template</Label>
             <Textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
@@ -85,11 +138,11 @@ export function SettingsPanel() {
             {isEditingPrompt ? (
               <Button size="sm" onClick={handleSavePrompt}>
                 <Check className="w-3.5 h-3.5 mr-1.5" />
-                保存
+                Save
               </Button>
             ) : (
               <Button size="sm" variant="outline" onClick={() => setIsEditingPrompt(true)}>
-                编辑
+                Edit
               </Button>
             )}
             <Button
@@ -98,11 +151,11 @@ export function SettingsPanel() {
               className="text-muted-foreground hover:text-foreground"
               onClick={() => { setPrompt(DEFAULT_PROMPT); setIsEditingPrompt(false); }}
             >
-              重置
+              Reset
             </Button>
             {promptSaved && (
               <small className="text-muted-foreground flex items-center gap-1">
-                <Check className="w-3 h-3" /> 已保存
+                <Check className="w-3.5 h-3.5" /> Saved
               </small>
             )}
           </div>
@@ -111,11 +164,11 @@ export function SettingsPanel() {
 
       {/* TTS Settings */}
       <section>
-        <SectionHeader label="配音" />
+        <SectionHeader label="Voice & Audio" />
         <div className="bg-card border border-border rounded-md p-5">
           <div className="grid grid-cols-2 gap-x-6 gap-y-5">
             <div className="space-y-2">
-              <Label className="text-sm">TTS 服务</Label>
+              <Label className="text-sm">TTS Service</Label>
               <Select value={ttsService} onValueChange={handleTtsServiceChange}>
                 <SelectTrigger className="bg-input-background border-border h-9 text-sm">
                   <SelectValue />
@@ -129,7 +182,7 @@ export function SettingsPanel() {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm">声音</Label>
+              <Label className="text-sm">Voice</Label>
               <Select value={voice} onValueChange={setVoice}>
                 <SelectTrigger className="bg-input-background border-border h-9 text-sm">
                   <SelectValue />
@@ -143,24 +196,24 @@ export function SettingsPanel() {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm">情绪风格</Label>
+              <Label className="text-sm">Tone / Emotion</Label>
               <Select value={emotion} onValueChange={setEmotion}>
                 <SelectTrigger className="bg-input-background border-border h-9 text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="neutral">标准</SelectItem>
-                  <SelectItem value="cheerful">活泼</SelectItem>
-                  <SelectItem value="serious">严肃</SelectItem>
-                  <SelectItem value="calm">平静</SelectItem>
-                  <SelectItem value="excited">激动</SelectItem>
+                  <SelectItem value="neutral">Neutral</SelectItem>
+                  <SelectItem value="cheerful">Cheerful</SelectItem>
+                  <SelectItem value="serious">Authoritative</SelectItem>
+                  <SelectItem value="calm">Calm</SelectItem>
+                  <SelectItem value="excited">Excited</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-3">
               <Label className="text-sm">
-                语速 <span className="text-muted-foreground font-mono">{speed[0].toFixed(1)}×</span>
+                Speaking Rate <span className="text-muted-foreground font-mono">{speed[0].toFixed(1)}×</span>
               </Label>
               <Slider
                 value={speed}
@@ -180,10 +233,10 @@ export function SettingsPanel() {
 
       {/* Template Settings */}
       <section>
-        <SectionHeader label="画面模板" />
+        <SectionHeader label="Visual Templates" />
         <div className="bg-card border border-border rounded-md p-5 space-y-5">
           <div className="space-y-3">
-            <Label className="text-sm">模板</Label>
+            <Label className="text-sm">Template Style</Label>
             <div className="flex gap-2">
               {TEMPLATES.map((tpl) => (
                 <button
@@ -205,22 +258,22 @@ export function SettingsPanel() {
 
           <div className="grid grid-cols-2 gap-x-6 gap-y-5">
             <div className="space-y-2">
-              <Label className="text-sm">标题样式</Label>
+              <Label className="text-sm">Title Style</Label>
               <Select value={titleStyle} onValueChange={setTitleStyle}>
                 <SelectTrigger className="bg-input-background border-border h-9 text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="bold">粗体大标题</SelectItem>
-                  <SelectItem value="elegant">优雅细线</SelectItem>
-                  <SelectItem value="neon">霓虹发光</SelectItem>
-                  <SelectItem value="minimal">极简无衬</SelectItem>
+                  <SelectItem value="bold">Bold Title</SelectItem>
+                  <SelectItem value="elegant">Elegant Sans</SelectItem>
+                  <SelectItem value="neon">Neon Glow</SelectItem>
+                  <SelectItem value="minimal">Minimal Mono</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm">代码主题</Label>
+              <Label className="text-sm">Code Theme</Label>
               <Select value={codeTheme} onValueChange={setCodeTheme}>
                 <SelectTrigger className="bg-input-background border-border h-9 text-sm">
                   <SelectValue />
@@ -235,24 +288,24 @@ export function SettingsPanel() {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm">背景特效</Label>
+              <Label className="text-sm">Background Effect</Label>
               <Select value={backgroundEffect} onValueChange={setBackgroundEffect}>
                 <SelectTrigger className="bg-input-background border-border h-9 text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="particles">粒子流</SelectItem>
-                  <SelectItem value="grid">网格线</SelectItem>
-                  <SelectItem value="gradient">渐变动态</SelectItem>
-                  <SelectItem value="none">无特效</SelectItem>
+                  <SelectItem value="particles">Particles</SelectItem>
+                  <SelectItem value="grid">Grid Pattern</SelectItem>
+                  <SelectItem value="gradient">Gradient Flow</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-3">
               <Label className="text-sm">
-                节奏 <span className="text-muted-foreground">
-                  {["慢", "中慢", "标准", "中快", "快"][pacing[0] - 1]}
+                Pacing <span className="text-muted-foreground">
+                  {["Slow", "Relaxed", "Standard", "Brisk", "Fast"][pacing[0] - 1]}
                 </span>
               </Label>
               <Slider
@@ -263,16 +316,71 @@ export function SettingsPanel() {
                 step={1}
               />
               <div className="flex justify-between">
-                <small className="text-muted-foreground">慢</small>
-                <small className="text-muted-foreground">快</small>
+                <small className="text-muted-foreground">Slow</small>
+                <small className="text-muted-foreground">Fast</small>
               </div>
             </div>
           </div>
         </div>
       </section>
 
+      {/* Local Server Control */}
+      <section className="space-y-4">
+        <SectionHeader label="Local Server Control" />
+        <div className="bg-card border border-border rounded-lg p-5 space-y-4">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-semibold">FastAPI / Uvicorn Server</h3>
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                  serverStatus === "Running" ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" :
+                  serverStatus === "Starting" ? "bg-amber-500/10 text-amber-500 border border-amber-500/20" :
+                  serverStatus === "Error" ? "bg-rose-500/10 text-rose-500 border border-rose-500/20" :
+                  "bg-zinc-500/10 text-zinc-500 border border-zinc-500/20"
+                }`}>
+                  ● {serverStatus}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Port 8000 · Host 0.0.0.0 · Python .venv · LAN: <span className="font-mono">{lanUrl}</span>
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                onClick={() => callServerCmd("start")}
+                disabled={serverStatus === "Running" || isBusy}
+              >
+                Start Server
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => callServerCmd("restart")}
+                disabled={isBusy}
+              >
+                Restart Server
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => callServerCmd("stop")}
+                disabled={serverStatus === "Stopped" || isBusy}
+              >
+                Stop Server
+              </Button>
+            </div>
+          </div>
+          {serverMessage && (
+            <p className="text-xs text-muted-foreground bg-muted p-2 rounded font-mono">
+              {serverMessage}
+            </p>
+          )}
+        </div>
+      </section>
+
       <div className="flex justify-end">
-        <Button>保存设置</Button>
+        <Button>Save Settings</Button>
       </div>
     </div>
   );

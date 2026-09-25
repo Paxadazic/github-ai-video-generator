@@ -66,12 +66,8 @@ def load_settings() -> Settings:
         minimax_cli_region=os.getenv("MINIMAX_CLI_REGION", "cn"),
         minimax_text_model=os.getenv("MINIMAX_TEXT_MODEL", "MiniMax-M2.7"),
         minimax_tts_model=os.getenv("MINIMAX_TTS_MODEL", "speech-2.8-hd"),
-        minimax_tts_endpoint=os.getenv(
-            "MINIMAX_TTS_ENDPOINT", "https://api.minimax.io/v1/t2a_v2"
-        ),
-        minimax_tts_voice_id=os.getenv(
-            "MINIMAX_TTS_VOICE_ID", "Chinese (Mandarin)_Sweet_Lady"
-        )
+        minimax_tts_endpoint=os.getenv("MINIMAX_TTS_ENDPOINT", "https://api.minimax.io/v1/t2a_v2"),
+        minimax_tts_voice_id=os.getenv("MINIMAX_TTS_VOICE_ID", "Chinese (Mandarin)_Sweet_Lady")
         or None,
         minimax_runtime_tmp_dir=Path(os.getenv("MINIMAX_RUNTIME_TMP_DIR", "data/runtime_tmp")),
         render_provider=os.getenv("RENDER_PROVIDER", "ffmpeg_info"),

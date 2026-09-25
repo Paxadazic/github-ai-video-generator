@@ -40,7 +40,7 @@ const CANDIDATE_PROJECTS: GithubProject[] = [
     stars: 124000,
     forks: 9800,
     todayStars: 2100,
-    tags: ["AI", "LLM", "本地部署"],
+    tags: ["AI", "LLM", "Local"],
     score: 97,
   },
   {
@@ -64,7 +64,7 @@ const CANDIDATE_PROJECTS: GithubProject[] = [
     stars: 18000,
     forks: 1200,
     todayStars: 980,
-    tags: ["AI", "Agent", "框架"],
+    tags: ["AI", "Agent", "Framework"],
     score: 93,
   },
   {
@@ -76,7 +76,7 @@ const CANDIDATE_PROJECTS: GithubProject[] = [
     stars: 48000,
     forks: 2500,
     todayStars: 620,
-    tags: ["前端", "框架", "SSG"],
+    tags: ["Frontend", "Framework", "SSG"],
     score: 89,
   },
   {
@@ -88,7 +88,7 @@ const CANDIDATE_PROJECTS: GithubProject[] = [
     stars: 82000,
     forks: 11000,
     todayStars: 1560,
-    tags: ["AI", "LLM", "平台"],
+    tags: ["AI", "LLM", "Platform"],
     score: 96,
   },
   {
@@ -100,7 +100,7 @@ const CANDIDATE_PROJECTS: GithubProject[] = [
     stars: 79000,
     forks: 9400,
     todayStars: 780,
-    tags: ["工具", "远程", "Rust"],
+    tags: ["Tools", "Remote", "Rust"],
     score: 88,
   },
   {
@@ -112,7 +112,7 @@ const CANDIDATE_PROJECTS: GithubProject[] = [
     stars: 29000,
     forks: 3100,
     todayStars: 890,
-    tags: ["AI", "工具", "生产力"],
+    tags: ["AI", "Tools", "Productivity"],
     score: 91,
   },
 ];
@@ -153,9 +153,9 @@ export function ProjectSelector({ open, onClose, selected, onConfirm }: ProjectS
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="bg-card border border-border max-w-xl p-0 gap-0">
         <DialogHeader className="px-5 pt-5 pb-4 border-b border-border">
-          <DialogTitle className="text-foreground">选择推荐项目</DialogTitle>
+          <DialogTitle className="text-foreground">Select Repositories</DialogTitle>
           <p className="text-sm text-muted-foreground mt-1">
-            最多选择 5 个 · 已选 {localSelected.length}/5
+            Choose up to 5 repositories · {localSelected.length}/5 selected
           </p>
         </DialogHeader>
 
@@ -163,7 +163,7 @@ export function ProjectSelector({ open, onClose, selected, onConfirm }: ProjectS
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
             <Input
-              placeholder="搜索项目…"
+              placeholder="Search repositories…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-8 h-9 text-sm bg-background border-border"
@@ -229,15 +229,15 @@ export function ProjectSelector({ open, onClose, selected, onConfirm }: ProjectS
         </ScrollArea>
 
         <div className="px-5 py-4 border-t border-border flex items-center justify-between">
-          <small className="text-muted-foreground">{filtered.length} 个候选项目</small>
+          <small className="text-muted-foreground">{filtered.length} candidates found</small>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={onClose}>取消</Button>
+            <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
             <Button
               size="sm"
               disabled={localSelected.length === 0}
               onClick={() => { onConfirm(localSelected); onClose(); }}
             >
-              确认 ({localSelected.length})
+              Confirm ({localSelected.length})
             </Button>
           </div>
         </div>

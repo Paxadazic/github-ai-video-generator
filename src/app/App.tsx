@@ -5,8 +5,8 @@ import { GenerationPanel } from "./components/GenerationPanel";
 import { Github } from "lucide-react";
 
 const TABS = [
-  { id: "generate", label: "一键生成" },
-  { id: "settings", label: "参数设置" },
+  { id: "generate", label: "Generate" },
+  { id: "settings", label: "Settings" },
 ] as const;
 
 type TabId = typeof TABS[number]["id"];
@@ -22,12 +22,12 @@ export default function App() {
           <div className="flex items-center gap-3">
             <Github className="w-5 h-5 text-foreground" />
             <div>
-              <h1 className="text-sm text-foreground">GitHub Trending 视频流水线</h1>
+              <h1 className="text-sm text-foreground">GitHub Trending AI Video Pipeline</h1>
             </div>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-green-600 inline-block" />
-            <small className="text-muted-foreground">运行中</small>
+            <small className="text-muted-foreground">Running</small>
           </div>
         </div>
       </header>

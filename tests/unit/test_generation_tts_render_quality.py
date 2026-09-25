@@ -28,7 +28,7 @@ class VariableDurationWavAdapter:
         self.durations_ms = durations_ms
         self.calls = 0
 
-    def synthesize(self, text: str, voice: str) -> dict[str, object]:
+    def synthesize(self, text: str, voice: str, config: Any = None) -> dict[str, object]:
         duration_ms = self.durations_ms[self.calls]
         self.calls += 1
         sample_rate = 8_000
@@ -48,10 +48,10 @@ class VariableDurationWavAdapter:
 
 
 class AlwaysBrokenModelAdapter:
-    def generate(self, prompt: str) -> str:
+    def generate(self, prompt: str, config: Any = None) -> str:
         return "not-json"
 
-    def repair(self, invalid_output: str, error: str) -> str:
+    def repair(self, invalid_output: str, error: str, config: Any = None) -> str:
         return "still-not-json"
 
 

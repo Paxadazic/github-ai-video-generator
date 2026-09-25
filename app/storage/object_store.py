@@ -52,10 +52,15 @@ class LocalObjectStore:
         return payload
 
     def path_from_url(self, url: str) -> Path:
-        if url.startswith("file:///"):
-            import urllib.parse
+        if url.startswith("file://"):
+            try:
+                return Path.from_uri(url)
+            except (ValueError, AttributeError):
+                import urllib.parse
+                import urllib.request
 
-            return Path(urllib.parse.unquote(url.removeprefix("file:///")))
+                parsed = urllib.parse.urlparse(url)
+                return Path(urllib.request.url2pathname(urllib.parse.unquote(parsed.path)))
         return Path(url)
 
     def exists(self, url: str) -> bool:

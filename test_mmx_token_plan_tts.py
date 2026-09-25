@@ -1,4 +1,5 @@
 """Test mmx CLI TTS with Token Plan Key (sk-cp-...)."""
+
 from __future__ import annotations
 
 import os

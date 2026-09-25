@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import urllib.error
 import urllib.request
-from typing import Protocol
+from typing import Any, Protocol
 from uuid import uuid4
 
 from pydantic import ValidationError
@@ -55,7 +55,7 @@ class DeepSeekModelAdapter:
             raise AppError(
                 "DEEPSEEK_API_KEY_MISSING", "DeepSeek API key is not configured", True, {}
             )
-        payload = {
+        payload: dict[str, Any] = {
             "model": self.model,
             "messages": [
                 {
@@ -103,9 +103,7 @@ class DeepSeekModelAdapter:
         self, invalid_output: str, error: str, config: ScriptGenerationConfig | None = None
     ) -> str:
         return self.generate(
-            "只修复为合法 JSON，并保持全中文。"
-            f"错误：{error}\n原始输出：\n{invalid_output}"
-            ,
+            f"只修复为合法 JSON，并保持全中文。错误：{error}\n原始输出：\n{invalid_output}",
             config,
         )
 
@@ -160,8 +158,7 @@ class MiniMaxCliModelAdapter:
     ) -> str:
         return self.generate(
             "Return only valid JSON. Keep the original content language and fix the schema error.\n"
-            f"Error: {error}\nInvalid output:\n{invalid_output}"
-            ,
+            f"Error: {error}\nInvalid output:\n{invalid_output}",
             config,
         )
 
@@ -363,8 +360,7 @@ class ContentGenerationService:
                 "type": "hook",
                 "durationSec": 20,
                 "voiceText": (
-                    f"今天关注 {candidate.repoFullName}。"
-                    f"它的核心信息是：{description[:90]}"
+                    f"今天关注 {candidate.repoFullName}。它的核心信息是：{description[:90]}"
                 ),
                 "screenText": f"{project}：今日开源关注",
                 "visualHint": "展示仓库名称、语言、Star 和 README 摘要。",

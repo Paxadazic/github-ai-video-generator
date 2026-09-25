@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import threading
+import time
 from collections.abc import Callable
 from dataclasses import replace
 from pathlib import Path
@@ -38,6 +40,7 @@ from app.minimax_cli import MiniMaxCliRunner
 from app.publish_ledger import PublishLedgerService
 from app.quality_check import QualityCheckService
 from app.scoring import ScoringService
+from app.server_control import ServerController
 from app.storage import LocalObjectStore, SQLiteRepository
 from app.tts_subtitle import TTSSubtitleService
 from app.tts_subtitle.service import (
@@ -108,7 +111,13 @@ class ReviewDecisionRequest(BaseModel):
 class ExportPackageRequest(BaseModel):
     taskId: str
     platforms: list[str] = Field(
-        default_factory=lambda: ["douyin", "wechat_channels", "bilibili", "xiaohongshu"]
+        default_factory=lambda: [
+            "youtube_shorts",
+            "tiktok",
+            "instagram_reels",
+            "x_twitter",
+            "linkedin",
+        ]
     )
 
 
@@ -308,9 +317,7 @@ def _script_summary(
         return {"title": script_asset.get("metadata", {}).get("title", "")}
     segments = script.get("segments", [])
     voice_text = " ".join(
-        str(segment.get("voiceText", ""))
-        for segment in segments
-        if isinstance(segment, dict)
+        str(segment.get("voiceText", "")) for segment in segments if isinstance(segment, dict)
     )
     return {
         "title": script.get("title", script_asset.get("metadata", {}).get("title", "")),
@@ -392,7 +399,11 @@ def _merge_generation_config(
     if request.visualConfig is not None:
         data["visualConfig"] |= request.visualConfig.model_dump(exclude_unset=True)
     if request.scriptConfig is None:
-        provider = "deepseek" if request.useDeepSeek or request.provider == "deepseek" else request.provider
+        provider = (
+            "deepseek"
+            if request.useDeepSeek or request.provider == "deepseek"
+            else request.provider
+        )
         data["scriptConfig"]["provider"] = "local" if provider == "local" else provider
     if request.ttsConfig is None:
         data["ttsConfig"]["provider"] = request.ttsMode
@@ -416,11 +427,15 @@ def _effective_generation_config(
     )
     payload = preset.get("payload") or default_video_preset_payload()
     base = VideoPresetPayload.model_validate(payload)
-    return _merge_generation_config(VideoGenerationConfig.model_validate(base.model_dump()), request)
+    return _merge_generation_config(
+        VideoGenerationConfig.model_validate(base.model_dump()), request
+    )
 
 
 def _preset_response(item: dict[str, Any]) -> dict[str, Any]:
-    payload = VideoPresetPayload.model_validate(item.get("payload") or default_video_preset_payload())
+    payload = VideoPresetPayload.model_validate(
+        item.get("payload") or default_video_preset_payload()
+    )
     return {
         "presetId": item["presetId"],
         "name": item["name"],
@@ -443,11 +458,62 @@ def create_app(services: Services | None = None) -> FastAPI:
 
     @app.get("/", response_class=HTMLResponse)
     def home() -> str:
+        template_path = Path(__file__).parent / "templates" / "generate.html"
+        if template_path.exists():
+            return template_path.read_text(encoding="utf-8")
         return GENERATE_PAGE
 
     @app.get("/health")
     def health() -> dict[str, Any]:
         return success_response({"status": "ok"})
+
+    @app.get("/api/server/status")
+    def server_status() -> dict[str, Any]:
+        sc = ServerController(host="0.0.0.0", port=8000)
+        return wrap(lambda: sc.get_status().to_dict())
+
+    @app.post("/api/server/start")
+    def server_start() -> dict[str, Any]:
+        sc = ServerController(host="0.0.0.0", port=8000)
+        return wrap(lambda: sc.start().to_dict())
+
+    @app.post("/api/server/restart")
+    def server_restart() -> dict[str, Any]:
+        sc = ServerController(host="0.0.0.0", port=8000)
+
+        def _do_restart() -> None:
+            time.sleep(0.3)
+            sc.restart()
+
+        threading.Thread(target=_do_restart, daemon=True).start()
+        return success_response(
+            {
+                "status": "Starting",
+                "port": 8000,
+                "host": "0.0.0.0",
+                "lanUrl": sc.get_status().lanUrl,
+                "message": "Uvicorn server is restarting...",
+            }
+        )
+
+    @app.post("/api/server/stop")
+    def server_stop() -> dict[str, Any]:
+        sc = ServerController(host="0.0.0.0", port=8000)
+
+        def _do_stop() -> None:
+            time.sleep(0.3)
+            sc.stop()
+
+        threading.Thread(target=_do_stop, daemon=True).start()
+        return success_response(
+            {
+                "status": "Stopped",
+                "port": 8000,
+                "host": "0.0.0.0",
+                "lanUrl": sc.get_status().lanUrl,
+                "message": "Uvicorn server is stopping...",
+            }
+        )
 
     def _generation_services(
         request: GenerateVideoRequest | GenerateFromSelectionRequest | GenerateForRepoRequest,
@@ -466,9 +532,7 @@ def create_app(services: Services | None = None) -> FastAPI:
         detail = services.review.get_review_detail(task_id)
         assets = services.repository.list_assets(task_id)
         paths = {
-            str(asset["type"]): str(
-                services.object_store.path_from_url(str(asset["url"]))
-            )
+            str(asset["type"]): str(services.object_store.path_from_url(str(asset["url"])))
             for asset in assets
             if asset["type"] in {"video", "cover", "audio", "script", "subtitle"}
         }
@@ -497,7 +561,9 @@ def create_app(services: Services | None = None) -> FastAPI:
 
     @app.get("/api/video-presets/{preset_id}")
     def get_video_preset(preset_id: str) -> dict[str, Any]:
-        return wrap(lambda: _preset_response(app.state.services.repository.get_video_preset(preset_id)))
+        return wrap(
+            lambda: _preset_response(app.state.services.repository.get_video_preset(preset_id))
+        )
 
     @app.post("/api/video-presets")
     def create_video_preset(request: VideoPresetRequest) -> dict[str, Any]:
@@ -546,6 +612,7 @@ def create_app(services: Services | None = None) -> FastAPI:
             services = _generation_services(request, config)
             result = services.control.generate_from_selection(request.repoFullName, config)
             return _format_generation_result(services, result)
+
         return wrap(run)
 
     @app.post("/api/video/generate-for-repo")
@@ -555,6 +622,7 @@ def create_app(services: Services | None = None) -> FastAPI:
             services = _generation_services(request, config)
             result = services.control.generate_for_repo(request.repoFullName, config)
             return _format_generation_result(services, result)
+
         return wrap(run)
 
     @app.post("/api/video/generate-real")
@@ -564,6 +632,7 @@ def create_app(services: Services | None = None) -> FastAPI:
             services = _generation_services(request, config)
             result = services.control.run_to_review_pending(request.candidateLimit, config)
             return _format_generation_result(services, result)
+
         return wrap(run)
 
     @app.get("/api/tasks/recent")

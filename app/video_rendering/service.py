@@ -531,7 +531,9 @@ def _write_slide(
     for bullet in bullets[: visual_config.bulletCount]:
         card_bottom = card_y + 104
         draw.rounded_rectangle(
-            (left, card_y, right, card_bottom), radius=visual_config.cardRadius, fill=palette["panel"]
+            (left, card_y, right, card_bottom),
+            radius=visual_config.cardRadius,
+            fill=palette["panel"],
         )
         draw.ellipse((left + 28, card_y + 40, left + 50, card_y + 62), fill=palette["accent"])
         for line_index, line in enumerate(_wrap_text(bullet, visual_config.bulletWrap)[:2]):
@@ -580,7 +582,12 @@ def _write_slide(
     )
     if visual_config.sourceText:
         draw.rectangle(
-            (left, visual_config.footerY, right, visual_config.footerY + visual_config.smallSize + 12),
+            (
+                left,
+                visual_config.footerY,
+                right,
+                visual_config.footerY + visual_config.smallSize + 12,
+            ),
             fill=palette["surface"],
         )
         draw.text(

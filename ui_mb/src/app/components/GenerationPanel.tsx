@@ -18,11 +18,11 @@ import {
 const AUTO_PROJECTS = CANDIDATE_PROJECTS.slice(0, 5);
 
 const PIPELINE_STEPS = [
-  { id: "fetch", label: "采集项目信息" },
-  { id: "score", label: "评分排序" },
-  { id: "script", label: "生成脚本" },
-  { id: "tts", label: "TTS 配音" },
-  { id: "render", label: "视频渲染" },
+  { id: "fetch", label: "Fetch Repository Data" },
+  { id: "score", label: "Score & Filter" },
+  { id: "script", label: "Generate Script" },
+  { id: "tts", label: "Voice Synthesis" },
+  { id: "render", label: "Render Video" },
 ];
 
 const LANG_COLORS: Record<string, string> = {
@@ -99,9 +99,9 @@ export function GenerationPanel() {
       {/* Project selection */}
       <section>
         <div className="flex items-center justify-between mb-4">
-          <p className="text-xs uppercase tracking-widest text-muted-foreground">项目选择</p>
+          <p className="text-xs uppercase tracking-widest text-muted-foreground">Repository Selection</p>
           <div className="flex items-center gap-2">
-            <small className="text-muted-foreground">{isAuto ? "自动" : "手动"}</small>
+            <small className="text-muted-foreground">{isAuto ? "Auto" : "Manual"}</small>
             <Switch
               checked={isAuto}
               onCheckedChange={handleAutoToggle}
@@ -114,7 +114,7 @@ export function GenerationPanel() {
             <>
               <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
                 <TrendingUp className="w-3.5 h-3.5 text-muted-foreground" />
-                <small className="text-muted-foreground">GitHub Trending 今日前 5</small>
+                <small className="text-muted-foreground">GitHub Trending Top 5 Today</small>
               </div>
               <ul>
                 {AUTO_PROJECTS.map((project, index) => (
@@ -145,7 +145,7 @@ export function GenerationPanel() {
                 onClick={() => setSelectorOpen(true)}
                 className="flex items-center gap-3 w-full px-4 py-3 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors border-b border-border"
               >
-                选择候选项目
+                Select Candidate Repositories
                 <ChevronRight className="w-4 h-4 ml-auto" />
               </button>
               {selectedProjects.length > 0 ? (
@@ -171,7 +171,7 @@ export function GenerationPanel() {
                 </ul>
               ) : (
                 <div className="px-4 py-8 text-center">
-                  <small className="text-muted-foreground">还没有选择项目</small>
+                  <small className="text-muted-foreground">No repositories selected yet</small>
                 </div>
               )}
             </>
@@ -190,10 +190,10 @@ export function GenerationPanel() {
           {generating ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              生成中…
+              Generating…
             </>
           ) : (
-            "生成视频"
+            "Generate Video"
           )}
         </Button>
       </div>
@@ -204,7 +204,7 @@ export function GenerationPanel() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
         >
-          <SectionHeader label="流水线进度" />
+          <SectionHeader label="Pipeline Progress" />
           <div className="bg-card border border-border rounded-md overflow-hidden">
             {/* Progress bar */}
             <div className="h-0.5 bg-border">
@@ -254,7 +254,7 @@ export function GenerationPanel() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
         >
-          <SectionHeader label="视频预览" />
+          <SectionHeader label="Video Preview" />
           <VideoPreview
             projectName={generatedProject.name}
             onRegenerate={handleRegenerate}
@@ -270,11 +270,11 @@ export function GenerationPanel() {
           className="bg-card border border-border rounded-md p-8 text-center"
         >
           <Check className="w-5 h-5 mx-auto mb-3 text-foreground" />
-          <p className="text-sm text-foreground mb-1">视频已发布</p>
-          <small className="text-muted-foreground">「{generatedProject?.fullName}」推荐视频已成功发布</small>
+          <p className="text-sm text-foreground mb-1">Video Published</p>
+          <small className="text-muted-foreground">Spotlight video for "{generatedProject?.fullName}" is ready.</small>
           <div className="mt-4">
             <Button variant="outline" size="sm" onClick={handleRegenerate}>
-              生成下一个
+              Generate Next Video
             </Button>
           </div>
         </motion.div>

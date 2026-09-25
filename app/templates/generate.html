@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>GitHub Trending 视频流水线</title>
+  <title>GitHub Trending AI Video Pipeline</title>
   <style>
     :root {
       color-scheme: light;
@@ -36,7 +36,7 @@
       min-width: 320px;
       background: var(--bg);
       color: var(--fg);
-      font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       letter-spacing: 0;
     }
     button, input, select, textarea { font: inherit; }
@@ -72,7 +72,7 @@
     a { color: var(--fg); text-decoration: none; }
     a:hover { text-decoration: underline; }
     code {
-      font-family: Consolas, "SFMono-Regular", monospace;
+      font-family: Consolas, "SFMono-Regular", Menlo, Monaco, monospace;
       font-size: 12px;
     }
 
@@ -90,7 +90,7 @@
     .topbar-inner,
     .tabs-inner,
     .content {
-      width: min(100%, 920px);
+      width: min(100%, 960px);
       margin: 0 auto;
     }
     .topbar-inner {
@@ -115,6 +115,7 @@
       color: var(--fg);
       background: var(--card);
       font-weight: 700;
+      font-size: 13px;
     }
     h1, h2, h3, p { margin: 0; }
     .brand h1 {
@@ -276,7 +277,7 @@
       color: var(--warn);
     }
     .task-title {
-      font-size: 23px;
+      font-size: 22px;
       line-height: 1.25;
       font-weight: 600;
       overflow-wrap: anywhere;
@@ -550,7 +551,7 @@
     .asset-list { display: grid; gap: 0; }
     .asset {
       display: grid;
-      grid-template-columns: 72px minmax(0, 1fr) auto;
+      grid-template-columns: 80px minmax(0, 1fr) auto;
       gap: 10px;
       align-items: center;
       padding: 9px 0;
@@ -661,6 +662,164 @@
       }
       .row-actions { justify-content: flex-start; }
     }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.62);
+      backdrop-filter: blur(2px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 16px;
+    }
+    .modal-card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      max-width: 490px;
+      width: 100%;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.25);
+      overflow: hidden;
+      animation: modalFadeIn 0.18s ease-out;
+    }
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: translateY(8px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--line);
+    }
+    .modal-body {
+      padding: 20px;
+      display: grid;
+      gap: 16px;
+    }
+
+    /* Server Control Section */
+    .server-control-strip {
+      background: var(--card);
+      border-bottom: 1px solid var(--line);
+      padding: 10px 24px;
+    }
+    .server-strip-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .server-info-col {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      min-width: 0;
+    }
+    .server-title-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .server-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .server-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .server-status.Running {
+      background: var(--ok-bg);
+      color: var(--ok);
+      border: 1px solid #b7e2c4;
+    }
+    .server-status.Stopped {
+      background: var(--soft);
+      color: var(--muted);
+      border: 1px solid var(--line);
+    }
+    .server-status.Starting {
+      background: var(--warn-bg);
+      color: var(--warn);
+      border: 1px solid #f0d09a;
+    }
+    .server-status.Error {
+      background: var(--danger-bg);
+      color: var(--danger);
+      border: 1px solid #f1b8b4;
+    }
+    .pulse-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+    .server-status.Starting .pulse-dot {
+      animation: serverPulse 1.2s infinite ease-in-out;
+    }
+    @keyframes serverPulse {
+      0%, 100% { opacity: 0.3; transform: scale(0.85); }
+      50% { opacity: 1; transform: scale(1.15); }
+    }
+    .server-meta-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 12px;
+      flex-wrap: wrap;
+    }
+    .server-lan-box {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--soft-2);
+      border: 1px solid var(--line);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+    .lan-label {
+      color: var(--muted);
+      font-size: 11px;
+    }
+    .mini-copy {
+      min-height: auto;
+      padding: 2px 6px;
+      font-size: 11px;
+      border-radius: 3px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      cursor: pointer;
+    }
+    .server-meta-text {
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .server-actions-col {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+    }
+    .server-notice {
+      font-size: 11px;
+      color: var(--muted);
+      min-height: 14px;
+    }
   </style>
 </head>
 <body>
@@ -670,26 +829,62 @@
         <div class="brand">
           <div class="brand-mark" aria-hidden="true">GH</div>
           <div>
-            <h1>GitHub Trending 视频流水线</h1>
-            <p>采集、生成、质检、审核和导出的本地生产工作台</p>
+            <h1>GitHub Trending AI Video Pipeline</h1>
+            <p>Discover repositories, generate scripts & voiceovers, render vertical videos, and review drafts</p>
           </div>
         </div>
         <div class="actions">
-          <span class="health"><span id="healthDot" class="dot"></span><span id="healthText">检测环境中</span></span>
-          <button id="refreshTasks" class="secondary" type="button">刷新任务</button>
-          <button id="newTask" class="secondary" type="button">新建任务</button>
-          <button id="generate" type="button">生成视频</button>
+          <span class="health"><span id="healthDot" class="dot"></span><span id="healthText">Checking environment...</span></span>
+          <button id="refreshTasks" class="secondary" type="button">Refresh Tasks</button>
+          <button id="newTask" class="secondary" type="button">New Task</button>
+          <button id="generate" type="button">Generate Video</button>
         </div>
       </div>
     </header>
 
-    <nav class="view-nav" id="viewNav" aria-label="工作台页面">
+    <section id="serverControlSection" class="server-control-strip">
+      <div class="server-strip-inner">
+        <div class="server-info-col">
+          <div class="server-title-row">
+            <span class="server-label">Local Server Control</span>
+            <span id="serverStatusBadge" class="server-status Running">
+              <span class="pulse-dot"></span>
+              <span id="serverStatusText">Running</span>
+            </span>
+          </div>
+          <div class="server-meta-row">
+            <span id="serverLanUrlWrap" class="server-lan-box">
+              <span class="lan-label">LAN URL:</span>
+              <a id="serverLanUrlLink" href="http://192.168.1.152:8000" target="_blank" rel="noreferrer">http://192.168.1.152:8000</a>
+              <button id="copyServerLanBtn" type="button" class="mini-copy" onclick="copyServerLanUrl()">Copy</button>
+            </span>
+            <span id="serverMetaDetail" class="server-meta-text">0.0.0.0:8000 · .venv</span>
+          </div>
+        </div>
+        <div class="server-actions-col">
+          <div class="button-row">
+            <button id="startServerBtn" type="button" onclick="handleStartServer()" title="Start Uvicorn on 0.0.0.0:8000 using existing .venv">
+              <span>▶</span> Start Server
+            </button>
+            <button id="restartServerBtn" type="button" class="secondary" onclick="handleRestartServer()" title="Restart Uvicorn process cleanly">
+              <span>⟳</span> Restart Server
+            </button>
+            <button id="stopServerBtn" type="button" class="danger" onclick="handleStopServer()" title="Stop Uvicorn server">
+              <span>⏹</span> Stop Server
+            </button>
+          </div>
+          <span id="serverActionNotice" class="server-notice"></span>
+        </div>
+      </div>
+    </section>
+
+    <nav class="view-nav" id="viewNav" aria-label="Workbench navigation">
       <div class="tabs-inner">
-        <button class="nav-button active" type="button" data-view="current">生成工作台</button>
-        <button class="nav-button" type="button" data-view="evidence">视频预览</button>
-        <button class="nav-button" type="button" data-view="create">项目选择</button>
-        <button class="nav-button" type="button" data-view="settings">参数设置</button>
-        <button class="nav-button" type="button" data-view="queue">任务队列</button>
+        <button class="nav-button active" type="button" data-view="current">Workbench</button>
+        <button class="nav-button" type="button" data-view="evidence">Video Preview</button>
+        <button class="nav-button" type="button" data-view="create">Repository Selection</button>
+        <button class="nav-button" type="button" data-view="settings">Settings & Presets</button>
+        <button class="nav-button" type="button" data-view="queue">Task Queue</button>
       </div>
     </nav>
 
@@ -701,40 +896,40 @@
               <div id="errorPanel"></div>
               <div class="hero-card">
                 <div class="meta-row" id="taskMeta">
-                  <span class="meta-chip">未选择任务</span>
+                  <span class="meta-chip">No task selected</span>
                 </div>
-                <h2 id="taskHeadline" class="task-title">选择候选项目，或直接生成今日视频</h2>
-                <p id="taskSubline" class="task-copy">系统会从 GitHub Trending 采集项目，生成脚本、配音、字幕、竖屏视频，并在质检通过后进入人工审核。</p>
+                <h2 id="taskHeadline" class="task-title">Select a candidate repository, or generate today's spotlight video</h2>
+                <p id="taskSubline" class="task-copy">The pipeline discovers trending GitHub projects, drafts an engaging script, generates voiceover audio and subtitles, renders a vertical card video, and runs automated QA checks.</p>
               </div>
 
               <section class="panel">
                 <div class="panel-header">
                   <div>
                     <div class="panel-kicker">Pipeline</div>
-                    <h2>流水线进度</h2>
+                    <h2>Execution Status</h2>
                   </div>
-                  <span id="currentStatus" class="status">未选择</span>
+                  <span id="currentStatus" class="status">Idle</span>
                 </div>
                 <div class="panel-body">
                   <div class="pipeline">
                     <div class="progress-track"><div id="progressFill" class="progress-fill"></div></div>
-                    <div class="pipeline-step" data-step="collect"><span class="step-dot"></span><span>采集项目和元数据</span></div>
-                    <div class="pipeline-step" data-step="score"><span class="step-dot"></span><span>评分、过滤和去重</span></div>
-                    <div class="pipeline-step" data-step="script"><span class="step-dot"></span><span>生成脚本和封面文案</span></div>
-                    <div class="pipeline-step" data-step="tts"><span class="step-dot"></span><span>TTS 配音和字幕时间轴</span></div>
-                    <div class="pipeline-step" data-step="render"><span class="step-dot"></span><span>渲染竖屏视频并质检</span></div>
+                    <div class="pipeline-step" data-step="collect"><span class="step-dot"></span><span>Collect repository & metadata</span></div>
+                    <div class="pipeline-step" data-step="score"><span class="step-dot"></span><span>Score, filter & deduplicate</span></div>
+                    <div class="pipeline-step" data-step="script"><span class="step-dot"></span><span>Generate script & slide copy</span></div>
+                    <div class="pipeline-step" data-step="tts"><span class="step-dot"></span><span>Synthesize voice & align subtitles</span></div>
+                    <div class="pipeline-step" data-step="render"><span class="step-dot"></span><span>Render vertical video & run QA</span></div>
                   </div>
-                  <div id="stageText" class="stage">空闲。默认配置会使用当前参数创建一个可预览的视频草稿。</div>
+                  <div id="stageText" class="stage">Idle. Ready to run video generation workflow.</div>
                 </div>
               </section>
             </div>
 
             <aside id="taskActionPanel" class="action-panel">
-              <h3>下一步动作</h3>
-              <p>先发现候选项目，或直接按当前参数生成今日视频。</p>
+              <h3>Next Steps</h3>
+              <p>Discover trending candidate repositories or generate today's video with current settings.</p>
               <div class="button-row">
-                <button type="button" onclick="startGeneration()">生成视频</button>
-                <button class="secondary" type="button" onclick="startDiscovery()">发现候选</button>
+                <button type="button" onclick="startGeneration()">Generate Video</button>
+                <button class="secondary" type="button" onclick="startDiscovery()">Discover Candidates</button>
               </div>
             </aside>
           </section>
@@ -748,37 +943,43 @@
           <div class="panel-header">
             <div>
               <div class="panel-kicker">Preview</div>
-              <h2>视频预览与审核证据</h2>
+              <h2>Video Preview & Review Evidence</h2>
             </div>
-            <button class="secondary" type="button" onclick="reloadCurrent()">刷新状态</button>
+            <button class="secondary" type="button" onclick="reloadCurrent()">Refresh</button>
           </div>
           <div class="panel-body">
             <div class="evidence-grid">
               <div class="preview-shell">
                 <div id="mediaBox" class="phone">
                   <div class="empty-preview">
-                    <b>暂无预览</b>
-                    <span>选择任务或生成视频后显示竖屏内容</span>
+                    <b>No Preview Available</b>
+                    <span>Select a task or generate a video to display vertical media.</span>
                     <div class="button-row">
-                      <button class="secondary" type="button" onclick="setView('current')">查看当前任务</button>
-                      <button type="button" onclick="startGeneration()">重新生成</button>
+                      <button class="secondary" type="button" onclick="setView('current')">View Current Task</button>
+                      <button type="button" onclick="startGeneration()">Regenerate</button>
                     </div>
                   </div>
                 </div>
                 <div id="audioBox"></div>
+                <div id="phoneActionBox" style="width:min(100%, 340px); display:none; margin-top:8px;">
+                  <button id="pushToPhoneBtn" type="button" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px;" class="secondary" onclick="openPhoneModal()">
+                    <span>📱</span>
+                    <span>Push to Phone (QR &amp; Link)</span>
+                  </button>
+                </div>
               </div>
               <div class="evidence-stack">
                 <div class="evidence-section">
-                  <div class="section-title">Review</div>
+                  <div class="section-title">Review & Approval</div>
                   <div id="reviewPanel"></div>
                 </div>
                 <div class="evidence-section">
-                  <div class="section-title">Assets</div>
+                  <div class="section-title">Generated Assets</div>
                   <div id="assetList" class="asset-list"></div>
                 </div>
                 <div class="evidence-section">
-                  <div class="section-title">Script</div>
-                  <div id="scriptSummary" class="raw">暂无任务</div>
+                  <div class="section-title">Script Manifest</div>
+                  <div id="scriptSummary" class="raw">No active task</div>
                 </div>
               </div>
             </div>
@@ -792,16 +993,16 @@
             <div class="panel-header">
               <div>
                 <div class="panel-kicker">Select</div>
-                <h2>项目选择</h2>
+                <h2>Repository Selection</h2>
               </div>
-              <button id="discoverBtn" class="secondary" type="button">发现候选</button>
+              <button id="discoverBtn" class="secondary" type="button">Discover Candidates</button>
             </div>
             <div class="panel-body">
               <div class="field full">
-                <span>直接指定仓库</span>
+                <span>Target Repository Directly</span>
                 <div class="repo-row">
-                  <input id="repoInput" type="text" placeholder="owner/name" />
-                  <button id="generateRepoBtn" type="button">生成</button>
+                  <input id="repoInput" type="text" placeholder="e.g. owner/name" />
+                  <button id="generateRepoBtn" type="button">Generate</button>
                 </div>
               </div>
             </div>
@@ -811,10 +1012,10 @@
             <div class="panel-header">
               <div>
                 <div class="panel-kicker">Candidates</div>
-                <h2>候选推荐</h2>
+                <h2>Recommended Candidates</h2>
               </div>
               <div class="filters">
-                <button class="filter active" type="button" onclick="clearCandidates()">清除</button>
+                <button class="filter active" type="button" onclick="clearCandidates()">Clear</button>
               </div>
             </div>
             <div class="panel-body" id="candidateList"></div>
@@ -827,117 +1028,117 @@
           <div class="panel-header">
             <div>
               <div class="panel-kicker">Settings</div>
-              <h2>生成参数</h2>
+              <h2>Pipeline Configuration</h2>
             </div>
           </div>
           <div class="panel-body">
             <div class="form-grid">
               <label class="field full">
-                <span>脚本来源</span>
+                <span>Script Model Provider</span>
                 <select id="provider">
-                  <option value="minimax" selected>MiniMax CLI</option>
-                  <option value="deepseek">DeepSeek</option>
-                  <option value="local">本地保底脚本</option>
+                  <option value="local">Local Template (Deterministic Offline Fallback)</option>
+                  <option value="deepseek">DeepSeek API</option>
+                  <option value="minimax">MiniMax CLI</option>
                 </select>
               </label>
               <label class="field">
-                <span>候选数量</span>
+                <span>Candidate Limit</span>
                 <input id="candidateLimit" type="number" min="1" max="20" value="5" />
               </label>
               <label class="field">
-                <span>渲染模式</span>
+                <span>Render Mode</span>
                 <select id="renderMode">
-                  <option value="ffmpeg_info">FFmpeg 竖屏模板</option>
-                  <option value="fake">Mock 渲染</option>
+                  <option value="ffmpeg_info" selected>FFmpeg Vertical Card Template (1080x1920)</option>
+                  <option value="fake">Mock Renderer (Instant / Offline Test)</option>
                 </select>
               </label>
               <label class="field full">
-                <span>配音模式</span>
+                <span>Voice (TTS) Provider</span>
                 <select id="ttsMode">
-                  <option value="minimax" selected>MiniMax CLI TTS</option>
-                  <option value="edge_tts">Edge TTS</option>
+                  <option value="edge_tts" selected>Edge TTS (Free Microsoft Neural Voices)</option>
+                  <option value="minimax">MiniMax CLI TTS</option>
+                  <option value="minimax_http">MiniMax HTTP API</option>
                   <option value="windows_sapi">Windows SAPI</option>
-                  <option value="minimax_http">MiniMax HTTP TTS</option>
-                  <option value="mock">本地 Mock TTS</option>
+                  <option value="mock">Mock TTS (Instant Silence / Tone)</option>
                 </select>
               </label>
             </div>
             <label class="check">
               <input id="deepseekFallback" type="checkbox" />
-              <span>强制使用 DeepSeek 生成脚本</span>
+              <span>Force DeepSeek for script generation</span>
             </label>
             <div class="settings-stack" style="margin-top:18px">
               <section class="settings-section">
-                <h3>参数预设</h3>
+                <h3>Configuration Presets</h3>
                 <div class="preset-row">
                   <label class="field">
-                    <span>当前预设</span>
+                    <span>Active Preset</span>
                     <select id="presetSelect"></select>
                   </label>
-                  <button id="savePresetBtn" type="button" class="secondary">保存</button>
-                  <button id="saveAsPresetBtn" type="button" class="secondary">另存</button>
-                  <button id="deletePresetBtn" type="button" class="danger">删除</button>
+                  <button id="savePresetBtn" type="button" class="secondary">Save</button>
+                  <button id="saveAsPresetBtn" type="button" class="secondary">Save As</button>
+                  <button id="deletePresetBtn" type="button" class="danger">Delete</button>
                 </div>
               </section>
               <section class="settings-section">
-                <h3>脚本生成</h3>
+                <h3>Script Generation</h3>
                 <div class="form-grid">
-                  <label class="field"><span>模型名称</span><input id="scriptModel" type="text" value="MiniMax-M2.7" /></label>
-                  <label class="field"><span>风格</span><input id="scriptStyle" type="text" value="code_ppt" /></label>
-                  <label class="field"><span>目标时长（秒）</span><input id="scriptDurationSec" type="number" min="30" max="180" value="75" /></label>
-                  <label class="field"><span>受众</span><input id="scriptAudience" type="text" value="chinese_developers" /></label>
-                  <label class="field"><span>温度</span><input id="scriptTemperature" type="number" min="0" max="2" step="0.05" value="0.35" /></label>
-                  <label class="field"><span>Top P</span><input id="scriptTopP" type="number" min="0" max="1" step="0.05" placeholder="可选" /></label>
+                  <label class="field"><span>Model Name</span><input id="scriptModel" type="text" value="deepseek-v4-flash" /></label>
+                  <label class="field"><span>Style</span><input id="scriptStyle" type="text" value="code_ppt" /></label>
+                  <label class="field"><span>Target Duration (sec)</span><input id="scriptDurationSec" type="number" min="30" max="180" value="75" /></label>
+                  <label class="field"><span>Target Audience</span><input id="scriptAudience" type="text" value="developers" /></label>
+                  <label class="field"><span>Temperature</span><input id="scriptTemperature" type="number" min="0" max="2" step="0.05" value="0.35" /></label>
+                  <label class="field"><span>Top P</span><input id="scriptTopP" type="number" min="0" max="1" step="0.05" placeholder="Optional" /></label>
                   <label class="field"><span>Max Tokens</span><input id="scriptMaxTokens" type="number" min="256" max="16000" value="4096" /></label>
-                  <label class="field full"><span>系统提示词</span><textarea id="scriptSystemPrompt">你是中文科技短视频编导。只输出严格 JSON，不要 markdown。所有讲稿、标题、封面、屏幕文字、简介和 CTA 必须是中文。</textarea></label>
-                  <label class="field full"><span>用户提示词模板</span><textarea id="scriptUserPromptTemplate" placeholder="留空使用默认模板。可用变量：{repoFullName} {repoUrl} {description} {language} {topics} {stars} {forks} {todayStars} {readmeSummary} {recommendReason} {style} {durationSec} {audience}"></textarea></label>
+                  <label class="field full"><span>System Prompt</span><textarea id="scriptSystemPrompt">You are an AI technology video director. Output strict JSON only, no markdown. All narration scripts, titles, cover text, on-screen text, summaries, and CTAs must be in natural, engaging English.</textarea></label>
+                  <label class="field full"><span>User Prompt Template</span><textarea id="scriptUserPromptTemplate" placeholder="Leave blank to use default template. Available variables: {repoFullName} {repoUrl} {description} {language} {topics} {stars} {forks} {todayStars} {readmeSummary} {recommendReason} {style} {durationSec} {audience}"></textarea></label>
                 </div>
               </section>
               <section class="settings-section">
-                <h3>语音生成</h3>
-                <p class="settings-help">默认使用 MiniMax CLI；这些字段对应 mmx speech synthesize 的可调参数。</p>
+                <h3>Voice & TTS Synthesis</h3>
+                <p class="settings-help">Edge TTS supports high-quality neural English voices (e.g. en-US-GuyNeural, en-US-AriaNeural, en-GB-SoniaNeural) without API keys.</p>
                 <div class="form-grid">
-                  <label class="field"><span>TTS 模型</span><input id="ttsModel" type="text" value="speech-2.8-hd" /></label>
-                  <label class="field"><span>Voice ID</span><input id="ttsVoiceId" type="text" value="default_cn_tech" /></label>
-                  <label class="field"><span>语速</span><input id="ttsSpeed" type="number" min="0.5" max="2" step="0.05" value="1.2" /></label>
-                  <label class="field"><span>音量</span><input id="ttsVolume" type="number" min="0" max="10" step="0.1" value="1" /></label>
-                  <label class="field"><span>音高</span><input id="ttsPitch" type="number" min="-12" max="12" step="1" value="0" /></label>
-                  <label class="field"><span>格式</span><select id="ttsFormat"><option value="mp3" selected>mp3</option><option value="wav">wav</option><option value="flac">flac</option><option value="pcm">pcm</option></select></label>
-                  <label class="field"><span>采样率</span><input id="ttsSampleRate" type="number" min="8000" max="48000" step="1000" value="32000" /></label>
-                  <label class="field"><span>比特率</span><input id="ttsBitrate" type="number" min="32000" max="320000" step="16000" value="128000" /></label>
-                  <label class="field"><span>声道</span><select id="ttsChannels"><option value="1" selected>1</option><option value="2">2</option></select></label>
-                  <label class="field"><span>语言增强</span><input id="ttsLanguage" type="text" value="Chinese" /></label>
-                  <label class="check"><input id="ttsSubtitles" type="checkbox" /><span>请求 CLI 字幕</span></label>
-                  <label class="field full"><span>发音替换</span><textarea id="ttsPronunciation" placeholder="每行一个：GitHub=吉特哈布"></textarea></label>
+                  <label class="field"><span>TTS Model</span><input id="ttsModel" type="text" value="speech-2.8-hd" /></label>
+                  <label class="field"><span>Voice ID</span><input id="ttsVoiceId" type="text" value="en-US-GuyNeural" /></label>
+                  <label class="field"><span>Speaking Rate</span><input id="ttsSpeed" type="number" min="0.5" max="2" step="0.05" value="1.0" /></label>
+                  <label class="field"><span>Volume</span><input id="ttsVolume" type="number" min="0" max="10" step="0.1" value="1.0" /></label>
+                  <label class="field"><span>Pitch</span><input id="ttsPitch" type="number" min="-12" max="12" step="1" value="0" /></label>
+                  <label class="field"><span>Format</span><select id="ttsFormat"><option value="mp3" selected>mp3</option><option value="wav">wav</option><option value="flac">flac</option><option value="pcm">pcm</option></select></label>
+                  <label class="field"><span>Sample Rate</span><input id="ttsSampleRate" type="number" min="8000" max="48000" step="1000" value="32000" /></label>
+                  <label class="field"><span>Bitrate</span><input id="ttsBitrate" type="number" min="32000" max="320000" step="16000" value="128000" /></label>
+                  <label class="field"><span>Channels</span><select id="ttsChannels"><option value="1" selected>1 (Mono)</option><option value="2">2 (Stereo)</option></select></label>
+                  <label class="field"><span>Language Tag</span><input id="ttsLanguage" type="text" value="English" /></label>
+                  <label class="check"><input id="ttsSubtitles" type="checkbox" /><span>Request CLI Subtitles</span></label>
+                  <label class="field full"><span>Pronunciation Lexicon</span><textarea id="ttsPronunciation" placeholder="One replacement per line, e.g. GitHub=Git-Hub&#10;SQL=Sequel"></textarea></label>
                 </div>
               </section>
               <section class="settings-section">
-                <h3>画面生成（规则化卡片模板）</h3>
+                <h3>Visual Layout & Card Rendering</h3>
                 <div class="form-grid">
-                  <label class="field"><span>主题</span><select id="visualTheme"><option value="auto" selected>自动轮换</option><option value="blue">蓝色</option><option value="green">绿色</option><option value="amber">琥珀色</option></select></label>
-                  <label class="field"><span>帧率</span><input id="visualFps" type="number" min="12" max="60" value="30" /></label>
-                  <label class="field"><span>宽度</span><input id="visualWidth" type="number" min="720" max="2160" value="1080" /></label>
-                  <label class="field"><span>高度</span><input id="visualHeight" type="number" min="1280" max="3840" value="1920" /></label>
-                  <label class="field"><span>标签文字</span><input id="visualLabel" type="text" value="GITHUB DAILY" /></label>
-                  <label class="field"><span>要点卡片数</span><input id="visualBulletCount" type="number" min="0" max="6" value="3" /></label>
-                  <label class="field"><span>主边距</span><input id="visualMargin" type="number" min="24" max="220" value="96" /></label>
-                  <label class="field"><span>外框边距</span><input id="visualOuterMargin" type="number" min="0" max="160" value="48" /></label>
-                  <label class="field"><span>标题字号</span><input id="visualTitleSize" type="number" min="32" max="96" value="62" /></label>
-                  <label class="field"><span>正文字号</span><input id="visualBodySize" type="number" min="20" max="64" value="36" /></label>
-                  <label class="field"><span>摘要字号</span><input id="visualSummarySize" type="number" min="24" max="72" value="42" /></label>
-                  <label class="field"><span>小字字号</span><input id="visualSmallSize" type="number" min="16" max="52" value="30" /></label>
-                  <label class="field"><span>字幕上边</span><input id="visualSubtitleTop" type="number" min="400" max="3000" value="1288" /></label>
-                  <label class="field"><span>字幕下边</span><input id="visualSubtitleBottom" type="number" min="600" max="3600" value="1688" /></label>
-                  <label class="field full"><span>底部来源文字</span><input id="visualSourceText" type="text" value="素材来源：GitHub 公开信息 / README / 仓库元数据" /></label>
-                  <label class="check"><input id="visualShowGrid" type="checkbox" checked /><span>显示背景网格</span></label>
-                  <label class="check"><input id="visualShowSubtitlePanel" type="checkbox" checked /><span>显示字幕面板</span></label>
-                  <label class="check"><input id="visualShowStep" type="checkbox" checked /><span>显示页码</span></label>
+                  <label class="field"><span>Theme</span><select id="visualTheme"><option value="auto" selected>Auto Rotate</option><option value="blue">Blue</option><option value="green">Green</option><option value="amber">Amber</option></select></label>
+                  <label class="field"><span>Frame Rate</span><input id="visualFps" type="number" min="12" max="60" value="30" /></label>
+                  <label class="field"><span>Width</span><input id="visualWidth" type="number" min="720" max="2160" value="1080" /></label>
+                  <label class="field"><span>Height</span><input id="visualHeight" type="number" min="1280" max="3840" value="1920" /></label>
+                  <label class="field"><span>Header Badge</span><input id="visualLabel" type="text" value="GITHUB TRENDING" /></label>
+                  <label class="field"><span>Bullet Card Count</span><input id="visualBulletCount" type="number" min="0" max="6" value="3" /></label>
+                  <label class="field"><span>Main Margin</span><input id="visualMargin" type="number" min="24" max="220" value="96" /></label>
+                  <label class="field"><span>Outer Margin</span><input id="visualOuterMargin" type="number" min="0" max="160" value="48" /></label>
+                  <label class="field"><span>Title Font Size</span><input id="visualTitleSize" type="number" min="32" max="96" value="62" /></label>
+                  <label class="field"><span>Body Font Size</span><input id="visualBodySize" type="number" min="20" max="64" value="36" /></label>
+                  <label class="field"><span>Summary Font Size</span><input id="visualSummarySize" type="number" min="24" max="72" value="42" /></label>
+                  <label class="field"><span>Small Font Size</span><input id="visualSmallSize" type="number" min="16" max="52" value="30" /></label>
+                  <label class="field"><span>Subtitle Top Y</span><input id="visualSubtitleTop" type="number" min="400" max="3000" value="1288" /></label>
+                  <label class="field"><span>Subtitle Bottom Y</span><input id="visualSubtitleBottom" type="number" min="600" max="3600" value="1688" /></label>
+                  <label class="field full"><span>Footer Attribution</span><input id="visualSourceText" type="text" value="Source: Public GitHub repository metadata & README" /></label>
+                  <label class="check"><input id="visualShowGrid" type="checkbox" checked /><span>Show background grid</span></label>
+                  <label class="check"><input id="visualShowSubtitlePanel" type="checkbox" checked /><span>Show subtitle bar</span></label>
+                  <label class="check"><input id="visualShowStep" type="checkbox" checked /><span>Show slide counter</span></label>
                 </div>
                 <ol class="rule-list">
-                  <li>每个脚本 segment 按 TTS slideTimeline 生成一张竖屏卡片；无 segment 时生成一张兜底封面卡。</li>
-                  <li>第一张卡片标题使用 coverText，后续标题按“项目看点、核心能力、使用场景、上手建议”等规则递进。</li>
-                  <li>screenText 作为主体文案并拆成要点卡片，voiceText 或字幕 items 进入底部字幕面板。</li>
-                  <li>每张卡片时长优先使用 totalVisualDurationMs，其次使用 visualDurationMs/audioDurationMs。</li>
+                  <li>Each script segment creates one vertical information card timed to narration audio.</li>
+                  <li>The opening card displays coverText; following cards highlight key features, architecture, and quickstart instructions.</li>
+                  <li>screenText forms bullet points while voiceText feeds synchronized subtitle display.</li>
+                  <li>Durations adapt to synthesized speech length to preserve perfect audio-video pacing.</li>
                 </ol>
               </section>
             </div>
@@ -950,14 +1151,14 @@
           <div class="panel-header">
             <div>
               <div class="panel-kicker">Queue</div>
-              <h2>任务队列</h2>
+              <h2>Task Queue</h2>
             </div>
             <div class="filters" id="filters">
-              <button class="filter active" type="button" data-filter="all">全部</button>
-              <button class="filter" type="button" data-filter="running">生成中</button>
-              <button class="filter" type="button" data-filter="review">待审核</button>
-              <button class="filter" type="button" data-filter="failed">失败</button>
-              <button class="filter" type="button" data-filter="done">已完成</button>
+              <button class="filter active" type="button" data-filter="all">All</button>
+              <button class="filter" type="button" data-filter="running">Running</button>
+              <button class="filter" type="button" data-filter="review">Review Pending</button>
+              <button class="filter" type="button" data-filter="failed">Failed</button>
+              <button class="filter" type="button" data-filter="done">Completed</button>
             </div>
           </div>
           <div class="panel-body">
@@ -966,10 +1167,10 @@
                 <tr>
                   <th style="width:150px">Task ID</th>
                   <th style="width:210px">Repo</th>
-                  <th style="width:90px">状态</th>
-                  <th>标题</th>
-                  <th style="width:150px">更新时间</th>
-                  <th style="width:210px">失败原因</th>
+                  <th style="width:110px">Status</th>
+                  <th>Title</th>
+                  <th style="width:150px">Updated</th>
+                  <th style="width:210px">Error / Reason</th>
                   <th style="width:92px"></th>
                 </tr>
               </thead>
@@ -981,6 +1182,50 @@
     </div>
   </main>
 
+  <div id="phoneModal" class="modal-backdrop" style="display:none;" onclick="if(event.target===this)closePhoneModal()">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 style="font-size:16px;font-weight:600">Push Video to Phone</h3>
+        <button class="ghost" type="button" onclick="closePhoneModal()" style="font-size:16px;min-height:auto;padding:4px 8px">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="text-align:center">
+          <div style="background:#fff;padding:12px;display:inline-block;border-radius:6px;border:1px solid var(--line);box-shadow:0 2px 8px rgba(0,0,0,0.06)">
+            <img id="phoneQrImage" src="" alt="Scan QR Code with Phone" width="200" height="200" style="display:block;margin:0 auto" />
+          </div>
+          <p style="margin-top:8px;font-size:13px;color:var(--muted)">Scan with your phone camera to stream or save to Photos / Gallery</p>
+        </div>
+
+        <div class="field">
+          <span>Host LAN IP / Hostname</span>
+          <div style="display:flex;gap:8px">
+            <input id="phoneHostIp" type="text" value="192.168.1.152" oninput="updatePhoneModalUrls()" />
+            <button class="secondary" type="button" onclick="resetPhoneHostIp()">Reset</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <span>Direct Mobile Video Link</span>
+          <div style="display:flex;gap:8px">
+            <input id="phoneDirectUrl" type="text" readonly style="font-size:13px" />
+            <button class="secondary" type="button" onclick="copyPhoneLink()">Copy</button>
+          </div>
+        </div>
+
+        <details>
+          <summary style="font-size:13px;font-weight:600">Android USB Transfer (ADB Push)</summary>
+          <div style="margin-top:8px" class="field">
+            <span style="font-size:12px;color:var(--muted)">Run this command in terminal if phone is connected via USB:</span>
+            <div style="display:flex;gap:8px">
+              <input id="phoneAdbCommand" type="text" readonly style="font-family:monospace;font-size:12px" />
+              <button class="secondary" type="button" onclick="copyAdbCommand()">Copy</button>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+
   <script>
     const state = {
       currentTaskId: null,
@@ -991,6 +1236,17 @@
       stageIndex: 0,
       presets: [],
       activePresetId: null,
+      currentVideoAsset: null,
+      hostLanIp: (function() {
+        try {
+          const saved = localStorage.getItem("phoneHostIp");
+          if (saved) return saved;
+        } catch (_) {}
+        if (location.hostname && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
+          return location.hostname;
+        }
+        return "192.168.1.152";
+      })(),
     };
 
     const $ = (id) => document.getElementById(id);
@@ -1043,27 +1299,27 @@
       }
       const body = await response.json();
       if (!response.ok || body.success === false) {
-        throw body.error || { code: "API_ERROR", message: "请求失败" };
+        throw body.error || { code: "API_ERROR", message: "Request failed" };
       }
       return body;
     }
 
     function statusLabel(status) {
       const labels = {
-        created: "已创建",
-        collected: "已采集",
-        scored: "已评分",
-        script_generated: "脚本完成",
-        tts_generated: "配音完成",
-        rendering: "渲染中",
-        rendered: "渲染完成",
-        review_pending: "待审核",
-        approved: "已通过",
-        rejected: "已驳回",
-        failed: "失败",
-        published_manual: "已发布",
+        created: "Created",
+        collected: "Collected",
+        scored: "Scored",
+        script_generated: "Script Ready",
+        tts_generated: "Audio Ready",
+        rendering: "Rendering",
+        rendered: "Rendered",
+        review_pending: "Review Pending",
+        approved: "Approved",
+        rejected: "Rejected",
+        failed: "Failed",
+        published_manual: "Published",
       };
-      return labels[status] || status || "未选择";
+      return labels[status] || status || "None";
     }
 
     function statusBadge(status) {
@@ -1089,7 +1345,7 @@
       const detail = error.detail || {};
       if (error.message) return error.message;
       if (detail.reason) return detail.reason;
-      return error.code || "未知错误";
+      return error.code || "Unknown error";
     }
 
     function fixCommand(error) {
@@ -1109,15 +1365,15 @@
       }
       $("errorPanel").innerHTML = `
         <div id="errorCard" class="error-card">
-          <h3>${escapeHtml(error.code || "生成失败")}</h3>
+          <h3>${escapeHtml(error.code || "Generation Failed")}</h3>
           <div>${escapeHtml(errorSummary(error))}</div>
           <div class="button-row">
-            <button class="secondary" type="button" onclick="copyError()">复制错误</button>
-            <button class="secondary" type="button" onclick="copyFixCommand()">复制修复命令</button>
-            <button class="secondary" type="button" onclick="reloadCurrent()">重新检测</button>
+            <button class="secondary" type="button" onclick="copyError()">Copy Error</button>
+            <button class="secondary" type="button" onclick="copyFixCommand()">Copy Fix Command</button>
+            <button class="secondary" type="button" onclick="reloadCurrent()">Retry / Recheck</button>
           </div>
           <details>
-            <summary>技术详情</summary>
+            <summary>Technical Details</summary>
             <pre class="raw">${escapeHtml(JSON.stringify(error, null, 2))}</pre>
           </details>
         </div>
@@ -1155,7 +1411,14 @@
     }
 
     function startStageLoop() {
-      const stages = ["采集 GitHub Trending", "计算推荐分", "生成脚本", "合成配音和字幕", "渲染竖屏视频", "等待质量检查"];
+      const stages = [
+        "Scraping GitHub Trending...",
+        "Scoring & ranking candidate repositories...",
+        "Generating video script & slide copy...",
+        "Synthesizing voice narration & subtitles...",
+        "Rendering vertical video via FFmpeg...",
+        "Running automated QA checks..."
+      ];
       state.stageIndex = 0;
       $("stageText").textContent = stages[0];
       updateProgress("created");
@@ -1177,10 +1440,10 @@
       try {
         const body = await api("/health");
         $("healthDot").classList.toggle("ok", body.data.status === "ok");
-        $("healthText").textContent = "运行中";
+        $("healthText").textContent = "Running";
       } catch {
         $("healthDot").classList.remove("ok");
-        $("healthText").textContent = "接口异常";
+        $("healthText").textContent = "API Error";
       }
     }
 
@@ -1212,14 +1475,14 @@
           <tr class="${rowClass}">
             <td data-label="Task ID"><code>${escapeHtml(shortTaskId(task.taskId))}</code></td>
             <td data-label="Repo" class="repo-cell"><a href="${escapeHtml(task.repoUrl)}" target="_blank" rel="noreferrer">${escapeHtml(task.repoFullName)}</a></td>
-            <td data-label="状态">${statusBadge(task.status)}</td>
-            <td data-label="标题" class="truncate" title="${escapeHtml(task.title || "-")}">${escapeHtml(task.title || "-")}</td>
-            <td data-label="更新时间">${escapeHtml(task.updatedAt || "-")}</td>
-            <td data-label="失败原因" class="truncate" title="${escapeHtml(reason)}">${escapeHtml(reason)}</td>
-            <td data-label="操作"><div class="row-actions"><button class="secondary" type="button" onclick="loadTaskDetail('${escapeHtml(task.taskId)}')">详情</button></div></td>
+            <td data-label="Status">${statusBadge(task.status)}</td>
+            <td data-label="Title" class="truncate" title="${escapeHtml(task.title || "-")}">${escapeHtml(task.title || "-")}</td>
+            <td data-label="Updated">${escapeHtml(task.updatedAt || "-")}</td>
+            <td data-label="Reason" class="truncate" title="${escapeHtml(reason)}">${escapeHtml(reason)}</td>
+            <td data-label="Actions"><div class="row-actions"><button class="secondary" type="button" onclick="loadTaskDetail('${escapeHtml(task.taskId)}')">Details</button></div></td>
           </tr>
         `;
-      }).join("") : `<tr><td colspan="7" style="color:var(--muted)">暂无任务</td></tr>`;
+      }).join("") : `<tr><td colspan="7" style="color:var(--muted)">No tasks recorded</td></tr>`;
     }
 
     async function loadTaskDetail(taskId) {
@@ -1245,25 +1508,94 @@
       state.currentTaskId = null;
       renderError(null);
       updateProgress("");
-      $("currentStatus").outerHTML = '<span id="currentStatus" class="status">未选择</span>';
-      $("taskMeta").innerHTML = '<span class="meta-chip">未选择任务</span>';
-      $("taskHeadline").textContent = "选择候选项目，或直接生成今日视频";
-      $("taskSubline").textContent = "系统会从 GitHub Trending 采集项目，生成脚本、配音、字幕、竖屏视频，并在质检通过后进入人工审核。";
+      $("currentStatus").outerHTML = '<span id="currentStatus" class="status">Idle</span>';
+      $("taskMeta").innerHTML = '<span class="meta-chip">No task selected</span>';
+      $("taskHeadline").textContent = "Select a candidate repository, or generate today's spotlight video";
+      $("taskSubline").textContent = "The pipeline discovers trending GitHub projects, drafts an engaging script, generates voiceover audio and subtitles, renders a vertical card video, and runs automated QA checks.";
       $("taskSummary").innerHTML = "";
       $("taskActionPanel").className = "action-panel";
       $("taskActionPanel").innerHTML = `
-        <h3>下一步动作</h3>
-        <p>先发现候选项目，或直接按当前参数生成今日视频。</p>
+        <h3>Next Steps</h3>
+        <p>Discover trending candidate repositories or generate today's video with current settings.</p>
         <div class="button-row">
-          <button type="button" onclick="startGeneration()">生成视频</button>
-          <button class="secondary" type="button" onclick="startDiscovery()">发现候选</button>
+          <button type="button" onclick="startGeneration()">Generate Video</button>
+          <button class="secondary" type="button" onclick="startDiscovery()">Discover Candidates</button>
         </div>
       `;
       $("reviewPanel").innerHTML = "";
       $("assetList").innerHTML = "";
-      $("scriptSummary").textContent = "暂无任务";
-      renderEmptyPreview("暂无预览", "选择任务或生成视频后显示竖屏内容");
+      $("scriptSummary").textContent = "No active task";
+      renderEmptyPreview("No Preview Available", "Select a task or generate a video to display vertical media.");
       setView("create");
+    }
+
+    function parsePronunciation(raw) {
+      if (!raw || !raw.trim()) return [];
+      return raw.trim().split("\n").map(line => {
+        const parts = line.split("=");
+        if (parts.length >= 2) {
+          return { source: parts[0].trim(), target: parts.slice(1).join("=").trim() };
+        }
+        return null;
+      }).filter(Boolean);
+    }
+
+    function buildGenPayload() {
+      return {
+        provider: $("provider").value,
+        candidateLimit: Number($("candidateLimit").value || 5),
+        useDeepSeek: $("deepseekFallback").checked,
+        ttsMode: $("ttsMode").value,
+        renderMode: $("renderMode").value,
+        presetId: state.activePresetId || undefined,
+        scriptConfig: {
+          provider: $("provider").value === "deepseek" ? "deepseek" : ($("provider").value === "minimax" ? "minimax" : "local"),
+          model: $("scriptModel").value.trim() || undefined,
+          style: $("scriptStyle").value.trim() || "code_ppt",
+          durationSec: Number($("scriptDurationSec").value || 75),
+          audience: $("scriptAudience").value.trim() || "developers",
+          temperature: Number($("scriptTemperature").value || 0.35),
+          topP: $("scriptTopP").value ? Number($("scriptTopP").value) : undefined,
+          maxTokens: Number($("scriptMaxTokens").value || 4096),
+          systemPrompt: $("scriptSystemPrompt").value.trim() || undefined,
+          userPromptTemplate: $("scriptUserPromptTemplate").value.trim() || undefined,
+        },
+        ttsConfig: {
+          provider: $("ttsMode").value,
+          model: $("ttsModel").value.trim() || "speech-2.8-hd",
+          voiceId: $("ttsVoiceId").value.trim() || "en-US-GuyNeural",
+          speed: Number($("ttsSpeed").value || 1.0),
+          volume: Number($("ttsVolume").value || 1.0),
+          pitch: Number($("ttsPitch").value || 0),
+          format: $("ttsFormat").value,
+          sampleRate: Number($("ttsSampleRate").value || 32000),
+          bitrate: Number($("ttsBitrate").value || 128000),
+          channels: Number($("ttsChannels").value || 1),
+          language: $("ttsLanguage").value.trim() || "English",
+          subtitles: $("ttsSubtitles").checked,
+          pronunciation: parsePronunciation($("ttsPronunciation").value),
+        },
+        visualConfig: {
+          theme: $("visualTheme").value,
+          fps: Number($("visualFps").value || 30),
+          width: Number($("visualWidth").value || 1080),
+          height: Number($("visualHeight").value || 1920),
+          label: $("visualLabel").value.trim() || "GITHUB TRENDING",
+          bulletCount: Number($("visualBulletCount").value || 3),
+          margin: Number($("visualMargin").value || 96),
+          outerMargin: Number($("visualOuterMargin").value || 48),
+          titleSize: Number($("visualTitleSize").value || 62),
+          bodySize: Number($("visualBodySize").value || 36),
+          summarySize: Number($("visualSummarySize").value || 42),
+          smallSize: Number($("visualSmallSize").value || 30),
+          subtitleTop: Number($("visualSubtitleTop").value || 1288),
+          subtitleBottom: Number($("visualSubtitleBottom").value || 1688),
+          sourceText: $("visualSourceText").value.trim() || "Source: Public GitHub repository metadata & README",
+          showGrid: $("visualShowGrid").checked,
+          showSubtitlePanel: $("visualShowSubtitlePanel").checked,
+          showStep: $("visualShowStep").checked,
+        }
+      };
     }
 
     async function startGeneration() {
@@ -1277,28 +1609,18 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(buildGenPayload())
         });
-        stopStageLoop(`生成完成：${body.data.taskId}`);
+        stopStageLoop(`Generation completed: ${body.data.taskId}`);
         await loadTaskDetail(body.data.taskId);
         await loadRecentTasks();
       } catch (error) {
-        stopStageLoop("生成失败，请查看当前任务中的失败原因");
+        stopStageLoop("Generation failed. Check error details below.");
         setView("current");
         renderError(error);
-        renderEmptyPreview("暂无预览", "视频生成失败，未产出 video 或 cover 文件");
+        renderEmptyPreview("Generation Failed", "Pipeline encountered an error before generating video output.");
         await loadRecentTasks();
       } finally {
         button.disabled = false;
       }
-    }
-
-    function buildGenPayload() {
-      return {
-        provider: $("provider").value,
-        candidateLimit: Number($("candidateLimit").value || 5),
-        useDeepSeek: $("deepseekFallback").checked,
-        ttsMode: $("ttsMode").value,
-        renderMode: $("renderMode").value
-      };
     }
 
     async function startDiscovery() {
@@ -1329,14 +1651,14 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ repoFullName, ...buildGenPayload() })
         });
-        stopStageLoop(`生成完成：${body.data.taskId}`);
+        stopStageLoop(`Generation completed: ${body.data.taskId}`);
         await loadTaskDetail(body.data.taskId);
         await loadRecentTasks();
       } catch (error) {
-        stopStageLoop("生成失败，请查看当前任务中的失败原因");
+        stopStageLoop("Generation failed. Check error details below.");
         setView("current");
         renderError(error);
-        renderEmptyPreview("暂无预览", "视频生成失败，未产出 video 或 cover 文件");
+        renderEmptyPreview("Generation Failed", "Video generation failed; no output assets available.");
         await loadRecentTasks();
       }
     }
@@ -1344,7 +1666,7 @@
     async function generateForRepo() {
       const repo = $("repoInput").value.trim();
       if (!repo || !repo.includes("/")) {
-        renderError({ code: "INVALID_REPO", message: "请输入格式为 owner/name 的仓库名" });
+        renderError({ code: "INVALID_REPO", message: "Please specify repository in 'owner/name' format." });
         return;
       }
       renderError(null);
@@ -1355,14 +1677,14 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ repoFullName: repo, ...buildGenPayload() })
         });
-        stopStageLoop(`生成完成：${body.data.taskId}`);
+        stopStageLoop(`Generation completed: ${body.data.taskId}`);
         await loadTaskDetail(body.data.taskId);
         await loadRecentTasks();
       } catch (error) {
-        stopStageLoop("生成失败，请查看当前任务中的失败原因");
+        stopStageLoop("Generation failed. Check error details below.");
         setView("current");
         renderError(error);
-        renderEmptyPreview("暂无预览", "视频生成失败，未产出 video 或 cover 文件");
+        renderEmptyPreview("Generation Failed", "Video generation failed; no output assets available.");
         await loadRecentTasks();
       }
     }
@@ -1372,30 +1694,30 @@
       const list = $("candidateList");
       if (!candidates.length) {
         list.className = "";
-        list.innerHTML = '<div style="color:var(--muted);font-size:13px">无可用候选项目</div>';
+        list.innerHTML = '<div style="color:var(--muted);font-size:13px">No candidate repositories found.</div>';
         panel.style.display = "";
         return;
       }
       list.innerHTML = candidates.map((c) => {
-        const risk = (c.riskFlags || []).join(", ") || "无";
+        const risk = (c.riskFlags || []).join(", ") || "None";
         const score = c.score != null ? c.score : "-";
         return `
           <div class="candidate-card">
             <div class="candidate-title">
               <b><a href="${escapeHtml(c.repoUrl)}" target="_blank" rel="noreferrer">${escapeHtml(c.repoFullName)}</a></b>
-              <span class="meta-chip">评分 ${escapeHtml(score)}</span>
+              <span class="meta-chip">Score ${escapeHtml(score)}</span>
             </div>
             <div class="meta-row">
               <span class="meta-chip">${escapeHtml(c.language || "Unknown")}</span>
               <span class="meta-chip">Stars ${escapeHtml(c.stars)}</span>
-              <span class="meta-chip">今日 +${escapeHtml(c.todayStars)}</span>
+              <span class="meta-chip">Today +${escapeHtml(c.todayStars)}</span>
             </div>
             <p>${escapeHtml(c.description || "")}</p>
-            <p>推荐理由：${escapeHtml(c.recommendReason || "-")}</p>
-            <p style="color:var(--danger)">风险：${escapeHtml(risk)}</p>
+            <p><strong>Recommendation:</strong> ${escapeHtml(c.recommendReason || "-")}</p>
+            <p style="color:var(--danger)"><strong>Risk:</strong> ${escapeHtml(risk)}</p>
             <div class="button-row">
-              <button type="button" onclick="generateFromSelection('${escapeHtml(c.repoFullName)}')">生成视频</button>
-              <button class="secondary" type="button" onclick="window.open('${escapeHtml(c.repoUrl)}','_blank')">查看 GitHub</button>
+              <button type="button" onclick="generateFromSelection('${escapeHtml(c.repoFullName)}')">Generate Video</button>
+              <button class="secondary" type="button" onclick="window.open('${escapeHtml(c.repoUrl)}','_blank')">View on GitHub</button>
             </div>
           </div>
         `;
@@ -1412,17 +1734,19 @@
     }
 
     function renderEmptyPreview(title, message) {
+      state.currentVideoAsset = null;
       $("mediaBox").innerHTML = `
         <div class="empty-preview">
           <b>${escapeHtml(title)}</b>
           <span>${escapeHtml(message)}</span>
           <div class="button-row">
-            <button class="secondary" type="button" onclick="focusError()">查看失败原因</button>
-            <button type="button" onclick="startGeneration()">重新生成</button>
+            <button class="secondary" type="button" onclick="focusError()">View Error</button>
+            <button type="button" onclick="startGeneration()">Regenerate</button>
           </div>
         </div>
       `;
       $("audioBox").innerHTML = "";
+      if ($("phoneActionBox")) $("phoneActionBox").style.display = "none";
     }
 
     function renderPreview(detail) {
@@ -1430,12 +1754,16 @@
       const assets = detail.assetsByType || {};
       $("currentStatus").outerHTML = statusBadge(task.status).replace("<span", '<span id="currentStatus"');
       updateProgress(task.status);
+      state.currentVideoAsset = assets.video || null;
       if (assets.video) {
         $("mediaBox").innerHTML = `<video controls src="${escapeHtml(assets.video.contentUrl)}"></video>`;
+        if ($("phoneActionBox")) $("phoneActionBox").style.display = "block";
       } else if (assets.cover) {
-        $("mediaBox").innerHTML = `<img alt="封面" src="${escapeHtml(assets.cover.contentUrl)}" />`;
+        $("mediaBox").innerHTML = `<img alt="Video Cover" src="${escapeHtml(assets.cover.contentUrl)}" />`;
+        if ($("phoneActionBox")) $("phoneActionBox").style.display = "none";
       } else {
-        renderEmptyPreview("暂无预览", "视频尚未产出，或当前任务已失败");
+        renderEmptyPreview("No Preview Available", "Video has not been produced yet or task failed.");
+        if ($("phoneActionBox")) $("phoneActionBox").style.display = "none";
       }
       $("audioBox").innerHTML = assets.audio
         ? `<audio controls src="${escapeHtml(assets.audio.contentUrl)}"></audio>`
@@ -1445,43 +1773,43 @@
     function renderTaskAction(detail) {
       const task = detail.task;
       const status = task.status;
-      let title = "继续推进任务";
-      let message = "根据当前状态检查证据，并执行下一步生产动作。";
-      let actions = '<button type="button" onclick="reloadCurrent()">刷新状态</button>';
+      let title = "Task In Progress";
+      let message = "Inspect artifacts and proceed with next production action.";
+      let actions = '<button type="button" onclick="reloadCurrent()">Refresh Status</button>';
 
       if (status === "failed") {
-        title = "修复失败后重试";
-        message = task.lastError ? errorSummary(task.lastError) : "任务失败，但没有返回结构化错误。";
+        title = "Generation Failed";
+        message = task.lastError ? errorSummary(task.lastError) : "Task failed without structured error details.";
         actions = `
-          <button type="button" onclick="startGeneration()">按当前配置重新生成</button>
-          <button class="secondary" type="button" onclick="copyError()">复制错误</button>
-          <button class="secondary" type="button" onclick="copyFixCommand()">复制修复命令</button>
+          <button type="button" onclick="startGeneration()">Regenerate with Current Settings</button>
+          <button class="secondary" type="button" onclick="copyError()">Copy Error</button>
+          <button class="secondary" type="button" onclick="copyFixCommand()">Copy Fix Command</button>
         `;
       } else if (status === "review_pending") {
-        title = "审核质量证据";
-        message = "任务已生成到待审核阶段。先检查预览、脚本摘要和资产，再决定通过或驳回。";
+        title = "Review Quality & Artifacts";
+        message = "Video rendering and QA checks completed. Review preview, script, and assets before deciding.";
         actions = `
-          <button type="button" onclick="submitReview('approved')">通过审核</button>
-          <button class="secondary" type="button" onclick="focusEvidence()">查看证据</button>
-          <button class="danger" type="button" onclick="submitReview('rejected')">驳回并重试</button>
+          <button type="button" onclick="submitReview('approved')">Approve Video</button>
+          <button class="secondary" type="button" onclick="focusEvidence()">View Evidence</button>
+          <button class="danger" type="button" onclick="submitReview('rejected')">Reject & Retry</button>
         `;
       } else if (status === "approved") {
-        title = "导出发布包";
-        message = "审核已通过，可以导出多平台发布包并进入人工发布记录流程。";
+        title = "Export Publishing Package";
+        message = "Review approved. Export release package for YouTube Shorts, TikTok, Instagram Reels, X, and LinkedIn.";
         actions = `
-          <button type="button" onclick="exportPackage()">导出发布包</button>
-          <button class="secondary" type="button" onclick="focusEvidence()">查看资产</button>
+          <button type="button" onclick="exportPackage()">Export Package</button>
+          <button class="secondary" type="button" onclick="focusEvidence()">View Assets</button>
         `;
       } else if (status === "published_manual") {
-        title = "任务已完成";
-        message = "发布记录已写入，当前任务可作为完成样本留档。";
-        actions = '<button type="button" onclick="focusEvidence()">查看发布记录</button>';
+        title = "Task Completed";
+        message = "Publishing records have been logged to the ledger. This task is completed.";
+        actions = '<button type="button" onclick="focusEvidence()">View Publish Records</button>';
       } else if (runningStatuses.has(status)) {
-        title = "等待生成推进";
-        message = "任务仍在生产链路中。刷新状态以获取最新阶段，失败时会显示恢复建议。";
+        title = "Pipeline Running";
+        message = "Generation pipeline is active. Refresh for real-time status updates.";
         actions = `
-          <button type="button" onclick="reloadCurrent()">刷新状态</button>
-          <button class="secondary" type="button" onclick="focusEvidence()">查看已产出证据</button>
+          <button type="button" onclick="reloadCurrent()">Refresh Status</button>
+          <button class="secondary" type="button" onclick="focusEvidence()">View Partial Assets</button>
         `;
       }
 
@@ -1497,29 +1825,29 @@
       const task = detail.task;
       const candidate = detail.candidate || {};
       const failedChecks = detail.quality.failedChecks || [];
-      const failText = task.lastError ? errorSummary(task.lastError) : "无";
-      const title = detail.scriptSummary && detail.scriptSummary.title ? detail.scriptSummary.title : task.repoFullName || "当前任务";
+      const failText = task.lastError ? errorSummary(task.lastError) : "None";
+      const title = detail.scriptSummary && detail.scriptSummary.title ? detail.scriptSummary.title : task.repoFullName || "Current Task";
       $("taskMeta").innerHTML = `
         ${statusBadge(task.status)}
         <span class="meta-chip">${escapeHtml(shortTaskId(task.taskId))}</span>
-        <span class="meta-chip">${escapeHtml(task.updatedAt || "未记录更新时间")}</span>
+        <span class="meta-chip">${escapeHtml(task.updatedAt || "No update timestamp")}</span>
       `;
       $("taskHeadline").textContent = title;
       $("taskSubline").textContent = task.repoFullName
-        ? `${task.repoFullName} · ${candidate.recommendReason || "暂无推荐理由"}`
-        : "暂无仓库信息";
+        ? `${task.repoFullName} · ${candidate.recommendReason || "No recommendation reason recorded"}`
+        : "No repository information";
       renderTaskAction(detail);
       $("taskSummary").innerHTML = `
-        <div class="summary-row"><b>任务状态</b><span>${statusBadge(task.status)}</span></div>
-        <div class="summary-row"><b>Repo</b><span>${escapeHtml(task.repoFullName)}</span></div>
-        <div class="summary-row"><b>失败原因</b><span>${escapeHtml(failText)}</span></div>
-        <div class="summary-row"><b>质量检查</b><span>${detail.quality.passed ? "通过" : "未通过"}${failedChecks.length ? "：" + escapeHtml(failedChecks.join("、")) : ""}</span></div>
+        <div class="summary-row"><b>Status</b><span>${statusBadge(task.status)}</span></div>
+        <div class="summary-row"><b>Repository</b><span>${escapeHtml(task.repoFullName)}</span></div>
+        <div class="summary-row"><b>Failure Reason</b><span>${escapeHtml(failText)}</span></div>
+        <div class="summary-row"><b>QA Verification</b><span>${detail.quality.passed ? "Passed" : "Failed"}${failedChecks.length ? ": " + escapeHtml(failedChecks.join(", ")) : ""}</span></div>
         <div class="summary-row"><b>Task ID</b><span><code>${escapeHtml(task.taskId)}</code></span></div>
-        <div class="summary-row"><b>推荐理由</b><span>${escapeHtml(candidate.recommendReason || "-")}</span></div>
+        <div class="summary-row"><b>Recommendation</b><span>${escapeHtml(candidate.recommendReason || "-")}</span></div>
       `;
       $("assetList").innerHTML = detail.assets.length
         ? detail.assets.map(assetItem).join("")
-        : '<div style="color:var(--muted);font-size:13px">暂无资产</div>';
+        : '<div style="color:var(--muted);font-size:13px">No assets generated yet</div>';
       $("scriptSummary").textContent = JSON.stringify(detail.scriptSummary || {}, null, 2);
       renderReviewPanel(detail);
     }
@@ -1529,7 +1857,7 @@
         <div class="asset">
           <b>${escapeHtml(asset.type)}</b>
           <div>
-            <a href="${escapeHtml(asset.contentUrl)}" target="_blank" rel="noreferrer">预览</a>
+            <a href="${escapeHtml(asset.contentUrl)}" target="_blank" rel="noreferrer">Open / Preview</a>
             <div class="asset-path">${escapeHtml(asset.localUrl)}</div>
           </div>
           <code>${escapeHtml(asset.contentType)}</code>
@@ -1542,22 +1870,22 @@
       const records = detail.publishRecords || [];
       if (task.status === "review_pending") {
         $("reviewPanel").innerHTML = `
-          <textarea id="reviewComment" placeholder="审核备注"></textarea>
+          <textarea id="reviewComment" placeholder="Review notes or feedback for this draft..."></textarea>
           <div class="button-row">
-            <button type="button" onclick="submitReview('approved')">通过审核</button>
-            <button class="danger" type="button" onclick="submitReview('rejected')">驳回并重试</button>
+            <button type="button" onclick="submitReview('approved')">Approve Video</button>
+            <button class="danger" type="button" onclick="submitReview('rejected')">Reject & Retry</button>
           </div>
         `;
       } else if (task.status === "approved") {
         $("reviewPanel").innerHTML = `
           <div class="button-row">
-            <button type="button" onclick="exportPackage()">导出发布包</button>
+            <button type="button" onclick="exportPackage()">Export Publishing Package</button>
           </div>
         `;
       } else if (task.status === "published_manual") {
         $("reviewPanel").innerHTML = `<div class="raw">${escapeHtml(JSON.stringify(records, null, 2))}</div>`;
       } else {
-        $("reviewPanel").innerHTML = "";
+        $("reviewPanel").innerHTML = `<div style="color:var(--muted);font-size:13px">Review actions will be available once the video reaches review_pending.</div>`;
       }
     }
 
@@ -1590,13 +1918,378 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             taskId: state.currentTaskId,
-            platforms: ["douyin", "wechat_channels", "bilibili", "xiaohongshu"]
+            platforms: ["youtube_shorts", "tiktok", "instagram_reels", "x_twitter", "linkedin"]
           })
         });
         $("scriptSummary").textContent = JSON.stringify(body.data, null, 2);
         await reloadCurrent();
       } catch (error) {
         renderError(error);
+      }
+    }
+
+    async function loadPresets() {
+      try {
+        const body = await api("/api/video-presets");
+        state.presets = body.data.presets || [];
+        const select = $("presetSelect");
+        if (!state.presets.length) {
+          select.innerHTML = '<option value="">Default Preset</option>';
+          return;
+        }
+        select.innerHTML = state.presets.map(p =>
+          `<option value="${escapeHtml(p.presetId)}" ${p.isDefault ? "selected" : ""}>${escapeHtml(p.name)}${p.isDefault ? " (Default)" : ""}</option>`
+        ).join("");
+        const def = state.presets.find(p => p.isDefault) || state.presets[0];
+        if (def) applyPreset(def);
+      } catch (e) {
+        console.warn("Could not load presets", e);
+      }
+    }
+
+    function applyPreset(preset) {
+      if (!preset || !preset.payload) return;
+      state.activePresetId = preset.presetId;
+      const { scriptConfig = {}, ttsConfig = {}, visualConfig = {} } = preset.payload;
+      if (scriptConfig.provider) $("provider").value = scriptConfig.provider;
+      if (scriptConfig.model) $("scriptModel").value = scriptConfig.model;
+      if (scriptConfig.style) $("scriptStyle").value = scriptConfig.style;
+      if (scriptConfig.durationSec) $("scriptDurationSec").value = scriptConfig.durationSec;
+      if (scriptConfig.audience) $("scriptAudience").value = scriptConfig.audience;
+      if (scriptConfig.temperature != null) $("scriptTemperature").value = scriptConfig.temperature;
+      if (scriptConfig.systemPrompt) $("scriptSystemPrompt").value = scriptConfig.systemPrompt;
+      if (ttsConfig.provider) $("ttsMode").value = ttsConfig.provider;
+      if (ttsConfig.voiceId) $("ttsVoiceId").value = ttsConfig.voiceId;
+      if (ttsConfig.speed != null) $("ttsSpeed").value = ttsConfig.speed;
+      if (ttsConfig.language) $("ttsLanguage").value = ttsConfig.language;
+      if (visualConfig.theme) $("visualTheme").value = visualConfig.theme;
+      if (visualConfig.label) $("visualLabel").value = visualConfig.label;
+      if (visualConfig.sourceText) $("visualSourceText").value = visualConfig.sourceText;
+    }
+
+    async function saveCurrentPreset(isNew = false) {
+      const name = isNew
+        ? prompt("Enter new preset name:", "Custom English Preset")
+        : (state.presets.find(p => p.presetId === state.activePresetId)?.name || "Default Preset");
+      if (!name) return;
+      const payload = buildGenPayload();
+      const body = {
+        name,
+        scriptConfig: payload.scriptConfig,
+        ttsConfig: payload.ttsConfig,
+        visualConfig: payload.visualConfig,
+        isDefault: true
+      };
+      try {
+        if (!isNew && state.activePresetId) {
+          await api(`/api/video-presets/${state.activePresetId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+          });
+        } else {
+          await api("/api/video-presets", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+          });
+        }
+        await loadPresets();
+        alert(`Preset '${name}' saved!`);
+      } catch (err) {
+        renderError(err);
+      }
+    }
+
+    async function deleteCurrentPreset() {
+      if (!state.activePresetId) return;
+      if (!confirm("Are you sure you want to delete this preset?")) return;
+      try {
+        await api(`/api/video-presets/${state.activePresetId}`, { method: "DELETE" });
+        state.activePresetId = null;
+        await loadPresets();
+      } catch (err) {
+        renderError(err);
+      }
+    }
+
+    function openPhoneModal() {
+      if (!state.currentVideoAsset) {
+        alert("No video asset available to push to phone.");
+        return;
+      }
+      $("phoneHostIp").value = state.hostLanIp;
+      updatePhoneModalUrls();
+      $("phoneModal").style.display = "flex";
+    }
+
+    function closePhoneModal() {
+      $("phoneModal").style.display = "none";
+    }
+
+    function updatePhoneModalUrls() {
+      const inputIp = $("phoneHostIp").value.trim();
+      const ip = inputIp || "192.168.1.152";
+      state.hostLanIp = ip;
+      try { localStorage.setItem("phoneHostIp", ip); } catch (_) {}
+
+      const port = location.port ? location.port : "8000";
+      const videoPath = state.currentVideoAsset ? (state.currentVideoAsset.contentUrl || "") : "";
+      const directUrl = `http://${ip}:${port}${videoPath}`;
+
+      $("phoneDirectUrl").value = directUrl;
+      $("phoneQrImage").src = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=8&data=${encodeURIComponent(directUrl)}`;
+
+      if (state.currentVideoAsset && state.currentVideoAsset.localUrl) {
+        const rawLocal = state.currentVideoAsset.localUrl;
+        const cleanPath = rawLocal.replace(/^file:\/\//, "");
+        const fileName = cleanPath.split("/").pop() || "video.mp4";
+        $("phoneAdbCommand").value = `adb push "${cleanPath}" /sdcard/Movies/${fileName}`;
+      } else {
+        $("phoneAdbCommand").value = "No local file path available";
+      }
+    }
+
+    function resetPhoneHostIp() {
+      $("phoneHostIp").value = "192.168.1.152";
+      updatePhoneModalUrls();
+    }
+
+    async function copyPhoneLink() {
+      const url = $("phoneDirectUrl").value;
+      if (!url) return;
+      try {
+        await navigator.clipboard.writeText(url);
+        const btn = event?.target;
+        if (btn) {
+          const old = btn.textContent;
+          btn.textContent = "Copied!";
+          setTimeout(() => { btn.textContent = old; }, 1500);
+        }
+      } catch (_) {
+        prompt("Copy direct video URL:", url);
+      }
+    }
+
+    async function copyAdbCommand() {
+      const cmd = $("phoneAdbCommand").value;
+      if (!cmd) return;
+      try {
+        await navigator.clipboard.writeText(cmd);
+        const btn = event?.target;
+        if (btn) {
+          const old = btn.textContent;
+          btn.textContent = "Copied!";
+          setTimeout(() => { btn.textContent = old; }, 1500);
+        }
+      } catch (_) {
+        prompt("Copy ADB command:", cmd);
+      }
+    }
+
+    /* Local Server Control */
+    const serverControlState = {
+      status: "Running",
+      port: 8000,
+      host: "0.0.0.0",
+      lanUrl: "http://192.168.1.152:8000",
+      lanIp: "192.168.1.152",
+      pids: [],
+      message: "",
+      isBusy: false,
+    };
+
+    async function fetchServerStatus() {
+      let data = null;
+      try {
+        const res = await fetch("/api/server/status", { signal: AbortSignal.timeout(2000) });
+        if (res.ok) {
+          const body = await res.json();
+          if (body.data) data = body.data;
+        }
+      } catch (_) {}
+
+      if (!data) {
+        try {
+          const mgrHost = location.hostname || "127.0.0.1";
+          const res2 = await fetch(`http://${mgrHost}:8001/api/server/status`, { signal: AbortSignal.timeout(2000) });
+          if (res2.ok) {
+            const body2 = await res2.json();
+            if (body2.data) data = body2.data;
+          }
+        } catch (_) {}
+      }
+
+      if (data) {
+        updateServerControlUI(data);
+      } else {
+        updateServerControlUI({
+          status: "Stopped",
+          port: 8000,
+          host: "0.0.0.0",
+          lanUrl: `http://${state.hostLanIp || "192.168.1.152"}:8000`,
+          lanIp: state.hostLanIp || "192.168.1.152",
+          pids: [],
+          message: "Server is stopped. Click Start Server to launch Uvicorn.",
+        });
+      }
+    }
+
+    function updateServerControlUI(info) {
+      serverControlState.status = info.status || "Stopped";
+      serverControlState.port = info.port || 8000;
+      serverControlState.host = info.host || "0.0.0.0";
+      serverControlState.lanUrl = info.lanUrl || `http://${info.lanIp || "192.168.1.152"}:8000`;
+      serverControlState.lanIp = info.lanIp || "192.168.1.152";
+      serverControlState.pids = info.pids || [];
+      serverControlState.message = info.message || "";
+
+      const badge = $("serverStatusBadge");
+      const text = $("serverStatusText");
+      if (badge && text) {
+        badge.className = `server-status ${serverControlState.status}`;
+        text.textContent = serverControlState.status;
+      }
+
+      const lanLink = $("serverLanUrlLink");
+      const lanWrap = $("serverLanUrlWrap");
+      if (lanLink && lanWrap) {
+        if (serverControlState.status === "Running") {
+          lanLink.href = serverControlState.lanUrl;
+          lanLink.textContent = serverControlState.lanUrl;
+          lanWrap.style.display = "inline-flex";
+        } else if (serverControlState.status === "Starting") {
+          lanLink.textContent = "Starting up...";
+          lanWrap.style.display = "inline-flex";
+        } else {
+          lanLink.textContent = "Server Stopped";
+          lanWrap.style.display = "none";
+        }
+      }
+
+      const meta = $("serverMetaDetail");
+      if (meta) {
+        const pidStr = serverControlState.pids.length ? ` · PID ${serverControlState.pids.join(",")}` : "";
+        meta.textContent = `${serverControlState.host}:${serverControlState.port} · .venv${pidStr}`;
+      }
+
+      const startBtn = $("startServerBtn");
+      const restartBtn = $("restartServerBtn");
+      const stopBtn = $("stopServerBtn");
+
+      if (serverControlState.isBusy) {
+        if (startBtn) startBtn.disabled = true;
+        if (restartBtn) restartBtn.disabled = true;
+        if (stopBtn) stopBtn.disabled = true;
+      } else {
+        if (serverControlState.status === "Running") {
+          if (startBtn) startBtn.disabled = true;
+          if (restartBtn) restartBtn.disabled = false;
+          if (stopBtn) stopBtn.disabled = false;
+        } else if (serverControlState.status === "Starting") {
+          if (startBtn) startBtn.disabled = true;
+          if (restartBtn) restartBtn.disabled = true;
+          if (stopBtn) stopBtn.disabled = true;
+        } else if (serverControlState.status === "Stopped") {
+          if (startBtn) startBtn.disabled = false;
+          if (restartBtn) restartBtn.disabled = true;
+          if (stopBtn) stopBtn.disabled = true;
+        } else {
+          if (startBtn) startBtn.disabled = false;
+          if (restartBtn) restartBtn.disabled = false;
+          if (stopBtn) stopBtn.disabled = false;
+        }
+      }
+
+      const notice = $("serverActionNotice");
+      if (notice && serverControlState.message) {
+        notice.textContent = serverControlState.message;
+      }
+    }
+
+    async function sendServerCommand(action) {
+      serverControlState.isBusy = true;
+      const notice = $("serverActionNotice");
+      if (notice) notice.textContent = `Executing ${action}...`;
+
+      let ok = false;
+      let resData = null;
+      try {
+        const res = await fetch(`/api/server/${action}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: AbortSignal.timeout(3000),
+        });
+        if (res.ok) {
+          const body = await res.json();
+          ok = true;
+          resData = body.data;
+        }
+      } catch (_) {}
+
+      if (!ok) {
+        try {
+          const mgrHost = location.hostname || "127.0.0.1";
+          const res2 = await fetch(`http://${mgrHost}:8001/api/server/${action}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            signal: AbortSignal.timeout(8000),
+          });
+          if (res2.ok) {
+            const body2 = await res2.json();
+            ok = true;
+            resData = body2.data;
+          }
+        } catch (_) {}
+      }
+
+      serverControlState.isBusy = false;
+      if (resData) updateServerControlUI(resData);
+
+      let attempts = 0;
+      const poll = setInterval(async () => {
+        attempts++;
+        await fetchServerStatus();
+        if (action === "start" && serverControlState.status === "Running") clearInterval(poll);
+        if (action === "stop" && serverControlState.status === "Stopped") clearInterval(poll);
+        if (action === "restart" && serverControlState.status === "Running" && attempts > 2) clearInterval(poll);
+        if (attempts > 12) clearInterval(poll);
+      }, 1000);
+    }
+
+    async function handleStartServer() {
+      if (serverControlState.status === "Running") {
+        alert("Server is already running on port 8000.");
+        return;
+      }
+      updateServerControlUI({ ...serverControlState, status: "Starting", message: "Launching Uvicorn on 0.0.0.0:8000..." });
+      await sendServerCommand("start");
+    }
+
+    async function handleRestartServer() {
+      if (!confirm("Restart Uvicorn server? Connected operations will briefly reconnect.")) return;
+      updateServerControlUI({ ...serverControlState, status: "Starting", message: "Restarting Uvicorn..." });
+      await sendServerCommand("restart");
+    }
+
+    async function handleStopServer() {
+      if (!confirm("Stop Uvicorn server on port 8000?")) return;
+      updateServerControlUI({ ...serverControlState, status: "Starting", message: "Stopping server..." });
+      await sendServerCommand("stop");
+    }
+
+    async function copyServerLanUrl() {
+      const url = serverControlState.lanUrl;
+      try {
+        await navigator.clipboard.writeText(url);
+        const btn = $("copyServerLanBtn");
+        if (btn) {
+          const old = btn.textContent;
+          btn.textContent = "Copied!";
+          setTimeout(() => { btn.textContent = old; }, 1500);
+        }
+      } catch (_) {
+        prompt("Copy LAN URL:", url);
       }
     }
 
@@ -1620,9 +2313,19 @@
       document.querySelectorAll("#filters .filter").forEach((item) => item.classList.toggle("active", item === button));
       renderRecentTasks();
     });
+    $("presetSelect").addEventListener("change", (e) => {
+      const selected = state.presets.find(p => p.presetId === e.target.value);
+      if (selected) applyPreset(selected);
+    });
+    $("savePresetBtn").addEventListener("click", () => saveCurrentPreset(false));
+    $("saveAsPresetBtn").addEventListener("click", () => saveCurrentPreset(true));
+    $("deletePresetBtn").addEventListener("click", deleteCurrentPreset);
 
     checkHealth();
+    loadPresets();
     loadRecentTasks();
+    fetchServerStatus();
+    setInterval(fetchServerStatus, 5000);
   </script>
 </body>
 </html>

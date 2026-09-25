@@ -241,9 +241,7 @@ class MiniMaxTTSAdapter:
         self, text: str, voice: str, config: TTSConfig | None = None
     ) -> dict[str, object]:
         if not self.api_key:
-            raise AppError(
-                "MINIMAX_API_KEY_MISSING", "MiniMax API key is not configured", True, {}
-            )
+            raise AppError("MINIMAX_API_KEY_MISSING", "MiniMax API key is not configured", True, {})
         effective = config or TTSConfig(voiceId=voice)
         resolved_voice = self._resolve_voice(effective.voiceId or voice)
         payload = {

@@ -73,13 +73,9 @@ class ControlPlaneService:
             task_id,
             script_config,
         )
-        self.repository.update_task_status(
-            task_id, TaskStatus.SCRIPT_GENERATED, "script generated"
-        )
+        self.repository.update_task_status(task_id, TaskStatus.SCRIPT_GENERATED, "script generated")
         script_payload = cast(dict[str, object], script_result["script"])
-        tts_result = self.tts.generate_tts(
-            task_id, script_payload, tts_config.voiceId, tts_config
-        )
+        tts_result = self.tts.generate_tts(task_id, script_payload, tts_config.voiceId, tts_config)
         self.repository.update_task_status(task_id, TaskStatus.TTS_GENERATED, "tts generated")
         render_submit = self.renderer.render_video(
             task_id,
@@ -121,8 +117,7 @@ class ControlPlaneService:
         run_folder = self._begin_output_folder()
         discover = self.discover_candidates(candidate_limit)
         recommended = [
-            Candidate.model_validate(item)
-            for item in cast(list[object], discover["recommended"])
+            Candidate.model_validate(item) for item in cast(list[object], discover["recommended"])
         ]
         selected = recommended[0]
         task = self.repository.create_task(selected.repoFullName, selected_by="system")

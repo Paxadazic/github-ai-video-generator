@@ -188,10 +188,14 @@ class SQLiteRepository:
         preset_id = preset_id or f"preset_{uuid4().hex[:10]}"
         if is_default:
             with self.connect() as conn:
-                conn.execute("UPDATE video_presets SET isDefault = 0 WHERE presetId != ?", (preset_id,))
+                conn.execute(
+                    "UPDATE video_presets SET isDefault = 0 WHERE presetId != ?", (preset_id,)
+                )
                 conn.execute(
                     """
-                    INSERT INTO video_presets(presetId, name, payload, isDefault, createdAt, updatedAt)
+                    INSERT INTO video_presets(
+                        presetId, name, payload, isDefault, createdAt, updatedAt
+                    )
                     VALUES (?, ?, ?, ?, ?, ?)
                     ON CONFLICT(presetId) DO UPDATE SET
                         name = excluded.name,
@@ -205,7 +209,9 @@ class SQLiteRepository:
             with self.connect() as conn:
                 conn.execute(
                     """
-                    INSERT INTO video_presets(presetId, name, payload, isDefault, createdAt, updatedAt)
+                    INSERT INTO video_presets(
+                        presetId, name, payload, isDefault, createdAt, updatedAt
+                    )
                     VALUES (?, ?, ?, ?, ?, ?)
                     ON CONFLICT(presetId) DO UPDATE SET
                         name = excluded.name,

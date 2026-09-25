@@ -10,6 +10,11 @@ from app.storage.object_store import LocalObjectStore
 from app.storage.repository import SQLiteRepository
 
 PLATFORM_NOTES = {
+    "youtube_shorts": "Upload vertical video (<=60s), check description, tags, and repo link.",
+    "tiktok": "Upload vertical video, verify voiceover audio, and optimize hashtags.",
+    "instagram_reels": "Upload 9:16 reel, choose clean cover frame, and include repo in caption.",
+    "x_twitter": "Attach video MP4, include repository link and concise key takeaway.",
+    "linkedin": "Publish video with professional summary and project repository link.",
     "douyin": "Manual upload; verify title and cover before publishing.",
     "wechat_channels": "Manual upload through official app or console.",
     "bilibili": "Manual upload; choose tech/open-source category.",

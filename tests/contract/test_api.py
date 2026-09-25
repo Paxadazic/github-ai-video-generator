@@ -33,6 +33,36 @@ def test_workbench_page_contains_static_mount_points(client: TestClient) -> None
     assert 'id="discoverBtn"' in response.text
     assert 'id="repoInput"' in response.text
     assert 'id="candidatePanel"' in response.text
+    assert 'id="startServerBtn"' in response.text
+    assert 'id="restartServerBtn"' in response.text
+    assert 'id="stopServerBtn"' in response.text
+    assert 'id="serverStatusBadge"' in response.text
+
+
+def test_server_control_endpoints(client: TestClient) -> None:
+    # 1. GET /api/server/status
+    res = client.get("/api/server/status")
+    assert res.status_code == 200
+    body = res.json()
+    assert body["success"] is True
+    assert "status" in body["data"]
+    assert "port" in body["data"]
+    assert "lanUrl" in body["data"]
+
+    # 2. POST /api/server/start
+    res_start = client.post("/api/server/start")
+    assert res_start.status_code == 200
+    assert res_start.json()["success"] is True
+
+    # 3. POST /api/server/restart
+    res_restart = client.post("/api/server/restart")
+    assert res_restart.status_code == 200
+    assert res_restart.json()["data"]["status"] == "Starting"
+
+    # 4. POST /api/server/stop
+    res_stop = client.post("/api/server/stop")
+    assert res_stop.status_code == 200
+    assert res_stop.json()["data"]["status"] == "Stopped"
 
 
 def test_discover_api_returns_recommended_candidates(client: TestClient) -> None:
